@@ -38,7 +38,7 @@ SensoriandoSensorDatum myData;
  * Prototypes
  */
 void OnSendError(uint8_t*);
-void OnMessage(uint8_t*, uint8_t*, uint8_t);
+void OnMessage(uint8_t*, const uint8_t*, size_t);
 void OnPaired(uint8_t *, String);
 void OnConnected(uint8_t *, String);
 
@@ -49,7 +49,7 @@ void setup()
   
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(LED_BUILTIN);
-//  simpleEspConnection.onMessage(&OnMessage);  
+  simpleEspConnection.onMessage(&OnMessage);  
   simpleEspConnection.onPaired(&OnPaired);  
   simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
@@ -77,7 +77,7 @@ void OnSendError(uint8_t* ad)
   Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' was not possible!");  
 }
 
-void OnMessage(uint8_t* ad, uint8_t* message, uint8_t len)
+void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   memcpy(&myData, message, sizeof(myData));
 

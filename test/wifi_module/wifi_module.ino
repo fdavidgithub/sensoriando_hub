@@ -24,9 +24,8 @@ void OnPaired(uint8_t *, String);
 bool readConfig();
 bool writeConfig();
 void OnNewGatewayAddress(uint8_t *, String);
-void OnConnected(uint8_t , String);
 void readSensor();
-void OnMessage(uint8_t*, uint8_t*, uint8_t);
+void OnMessage(uint8_t*, const uint8_t*, size_t);
 
 void setup()
 {
@@ -41,11 +40,10 @@ void setup()
   
   SimpleEspConnection.begin();
   SimpleEspConnection.setPairingBlinkPort(2);
-//  SimpleEspConnection.onMessage(&OnMessage);
+  SimpleEspConnection.onMessage(&OnMessage);
   SimpleEspConnection.onPaired(&OnPaired);
   SimpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);
   SimpleEspConnection.onSendError(&OnSendError);
-//  SimpleEspConnection.onConnected(&OnConnected);
 
   Serial.print("Client Address: ");Serial.println(WiFi.macAddress());
   espnow_init();
@@ -169,7 +167,7 @@ void readSensor()
   Serial.printf("stx=0x%02X, id=%d, value=%02f, etx=0x%02X\n", myData.stx, myData.id, myData.value, myData.etx);
 }
 
-void OnMessage(uint8_t* ad, uint8_t* message, uint8_t len)
+void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   Serial.print("Anything arrive from ");Serial.println((char *)ad);
   Serial.println((char *)message);
