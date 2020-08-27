@@ -1,8 +1,9 @@
-#ifndef ETHERNET_H
-#define ETHERNET_H
 /*
  * 
  */
+#ifndef ETHERNET_H
+#define ETHERNET_H
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Nanoshield_Ethernet.h>

@@ -8,6 +8,7 @@
 
 #define WIFI_RESET          "Wifi setting reseted"
 #define WIFI_FAIL           "Wifi fail: reboot!"
+#define WIFI_PASS           "Wifi init, OK!"
 
 #define RTC_INITFAIL        "RTC fail: reboot!"
 #define RTC_INITPASS        "RTC init, OK!"

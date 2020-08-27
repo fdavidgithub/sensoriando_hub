@@ -28,6 +28,8 @@
 #include "mqtt.h"
 #include "led.h"
 #include "ethernet.h"
+#include "wifi.h"
+
 
 /*
  * MACROS
@@ -140,12 +142,14 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
        
     // Wifi    
- /*   if ( ! wifi_init() ) {
+    if ( !wifi_init() ) {
         led_modeerror();
         logthing(WIFI_FAIL);
         resetFunc();
+    } else {
+        logthing(WIFI_PASS);
     }
-*/ 
+ 
     // Done
     led_modenormal();
     update_elapsedtime = millis();
@@ -158,6 +162,12 @@ void loop()
     char sent[256];
     DateTime dt;
     long reset_elapsedtime=0;
+
+#ifdef DEBUG
+if ( Serial1.available() ) {
+Serial.println(Serial1.read());  
+}
+#endif
 
     /*
      * Check if is necessary new ESSID
