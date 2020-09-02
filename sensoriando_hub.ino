@@ -158,16 +158,13 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 }
  
 void loop()
-{    
+{   
+    SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL};
     char sent[256];
     DateTime dt;
+    byte i;
     long reset_elapsedtime=0;
 
-#ifdef DEBUG
-if ( Serial1.available() ) {
-Serial.println(Serial1.read());  
-}
-#endif
 
     /*
      * Check if is necessary new ESSID
@@ -196,28 +193,34 @@ Serial.println(reset_elapsedtime);
     }
     #endif
 
-    if ( abs(millis() - update_elapsedtime) >= THING_UPDATE ) {
+
+    /*
+     * Receive data
+     */
+    if ( wifi_available(&datum) ) {
+        sd_writedatum(&datum);  
+    }
+
+    if ( (millis() - update_elapsedtime) >= THING_UPDATE ) {
         update_elapsedtime = millis();
 
-        /*
-         * Server MQTT
-         */       
         mqtt_reconnect();
-        
-        /*
-         * Send value of sensor
-         */
+
         dt = rtc_get(); 
+
         led_modesend();
- 
+        
         mqtt_senddatetime(dt, dt.unixtime());
         mqtt_sendstorage(dt, sd_freespace()); 
 
+        while ( sd_readdatum(&datum) ) {
+          mqtt_sendvalue(dt, datum.value, datum.id);  
+        }
+
+        sd_dropdb();
         led_modenormal();
-        sd_writedatum("{jsonfile}");
     }
 
-    sd_writedatum("testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest");
 }
 
 
