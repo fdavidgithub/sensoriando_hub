@@ -137,14 +137,13 @@ void command(SensoriandoWifiCommand* mycmd)
       default: mycmd->cmd = NAK;
   }
 
-  Serial.write(SYN);
-  Serial.write(SYN);
+  Serial.write(SYN);Serial.write(SYN);
   Serial.write(mycmd->stx);
   Serial.write(mycmd->cmd);
   Serial.write(mycmd->etx);
   
 #ifdef DEBUG
-Serial.print("Result command: ");Serial.println(mycmd->result, HEX);
+Serial.print("Result command: ");Serial.println(mycmd->cmd, HEX);
 #endif    
 }
 
@@ -155,6 +154,7 @@ void OnSendError(uint8_t* ad)
 
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
+  digitalWrite(GPIO_LED, 0);
   memcpy(&myData, message, sizeof(myData));
 
 #ifdef DEBUG
@@ -166,6 +166,9 @@ Serial.print("value: ");Serial.println(myData.value, DEC);
 Serial.print("ETX: ");Serial.println(myData.etx, HEX);
 Serial.println();
 #endif
+
+  Serial.write((uint8_t *)&myData, sizeof(myData));
+  digitalWrite(GPIO_LED, 1);  
 }
 
 void OnPaired(uint8_t *ga, String ad)
