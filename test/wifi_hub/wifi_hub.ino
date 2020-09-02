@@ -65,6 +65,7 @@ void loop()
   if ( digitalRead(GPIO_PAIR) ) {
     Serial.println("Pairing started...");
     delay(1000);
+    
     simpleEspConnection.startPairing(120);  
   }    
 }

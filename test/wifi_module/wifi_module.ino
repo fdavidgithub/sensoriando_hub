@@ -29,7 +29,7 @@ void OnMessage(uint8_t*, const uint8_t*, size_t);
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(GPIO_PAIR, INPUT);
 
   // start SPIFFS file system. Ensure, sketch is uploaded with FS support !!!
@@ -161,9 +161,10 @@ void readSensor()
 {
   myData.stx = 0x02;
   myData.id = 42;
-  myData.value = random(1,100);  
+  myData.value = random(1,100)/PI;  
   myData.etx = 0x03;
 
+  Serial.println(sizeof(myData));
   Serial.printf("stx=0x%02X, id=%d, value=%02f, etx=0x%02X\n", myData.stx, myData.id, myData.value, myData.etx);
 }
 
