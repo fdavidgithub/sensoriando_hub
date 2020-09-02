@@ -9,7 +9,7 @@
 /*
  * MACROS
  */
-#define DEBUG
+//#define DEBUG_WIFI
 
 #define TIMEOUT 5000
 
@@ -22,11 +22,40 @@
  * Prototypes
  */
 byte wifi_init();
+byte wifi_available(SensoriandoSensorDatum *); 
 
  
 /*
  * functions
  */
+byte wifi_available(SensoriandoSensorDatum *datum) {
+    byte stream[sizeof(SensoriandoSensorDatum)];
+    
+    if ( Serial1.available() ) {
+        Serial1.readBytes(stream, sizeof(SensoriandoSensorDatum));
+
+#ifdef DEBUG_WIFI
+Serial.write(stream, sizeof(SensoriandoSensorDatum));
+#endif
+
+        delay(1);
+        
+        memcpy(datum, stream, sizeof(SensoriandoSensorDatum));
+
+#ifdef DEBUG_WIFI
+Serial.print("Bytes received: ");Serial.println(sizeof(SensoriandoSensorDatum), DEC);
+Serial.print("STX: 0x");Serial.println(datum->stx, HEX);
+Serial.print("id: ");Serial.println(datum->id, DEC);
+Serial.print("value: ");Serial.println(datum->value, DEC);
+Serial.print("ETX: 0x");Serial.println(datum->etx, HEX);
+Serial.println();
+#endif
+
+    }
+
+    return (datum->stx == STX) && (datum->etx == ETX);
+}
+
 byte wifi_init() {
     SensoriandoWifiCommand mycmd;
     long timeelapsed;
@@ -61,7 +90,7 @@ byte wifi_init() {
       }
 
       if ( mycmd.etx == ETX ) {
-#ifdef DEBUG
+#ifdef DEBUG_WIFI
 Serial.println(mycmd.stx, HEX);
 Serial.println(mycmd.cmd, HEX);
 Serial.println(mycmd.etx, HEX);

@@ -12,7 +12,7 @@
 /*
  * MACROS
  */
-//#define DEBUG
+//#define DEBUG_MQTT
 
 #define MQTT_SERVER "broker.sensoriando.com.br"
 #define MQTT_UUID   "27c36465-7356-4fe7-b726-cf619a9a22f0"
@@ -53,17 +53,17 @@ byte mqtt_init()
 void mqtt_reconnect() 
 {
     while ( !mqttclient.connected() ) {
-#ifdef DEBUG
+#ifdef DEBUG_MQTT
         Serial.print("Attempting MQTT connection...");
 #endif
         if ( mqttclient.connect("Sensoriando", MQTT_USER, MQTT_PASSWD)) {
-#ifdef DEBUG
+#ifdef DEBUG_MQTT
             Serial.println("MQTT Server Connected");
 #endif
 
         } else {
 
-#ifdef DEBUG
+#ifdef DEBUG_MQTT
             Serial.print("failed, rc=");
             Serial.print(mqttclient.state());
             Serial.println(" try again in 5 seconds");
@@ -130,7 +130,7 @@ void mqtt_sendmessage(DateTime dt, char *msg)
                     msg);   
     sprintf(topic, "%s/%d", MQTT_UUID, MESSAGE_ID);
 */
-#ifdef DEBUG
+#ifdef DEBUG_MQTT
 Serial.print("json: ");Serial.println(topic_msg);
 #endif
 

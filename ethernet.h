@@ -12,7 +12,7 @@
 /*
  * MACROS
  */
-//#define DEBUG
+//#define DEBUG_ETH
 
 /* 
  * GlobalVariables
@@ -43,7 +43,7 @@ byte ethernet_init() {
       mac[i] = eeprom.read();
     }
 
-#ifdef DEBUG    
+#ifdef DEBUG_ETH    
 Serial.println();Serial.print("MAC address: ");
   
 for (i = 0; i < 5; i++) {
@@ -53,7 +53,7 @@ for (i = 0; i < 5; i++) {
 
     res = Ethernet.begin(mac);
     
-#ifdef DEBUG
+#ifdef DEBUG_ETH
 Serial.println("My IP address: ");Serial.print(Ethernet.localIP());
 #endif
 

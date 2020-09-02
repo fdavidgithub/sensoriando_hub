@@ -14,7 +14,7 @@
 /*
  * MACROS
  */
-//#define DEBUG
+//#define DEBUG_RTC
 
 /* 
  * GlobalVariables
@@ -38,7 +38,7 @@ byte rtc_init () {
       Wire.begin(GPIO_SDA, GPIO_SCL);
   #endif
   
-#ifdef DEBUG
+#ifdef DEBUG_RTC
 Serial.println("GPIO SDA: ");Serial.print(GPIO_SDA);Serial.print(" | SCL: ");Serial.print(GPIO_SCL);
 #endif
 
@@ -52,7 +52,7 @@ DateTime rtc_get () {
     rtcclient.read();
     dt = DateTime(rtcclient.getYear(), rtcclient.getMonth(), rtcclient.getDay(), rtcclient.getHours(), rtcclient.getMinutes(), rtcclient.getSeconds()); 
     
-#ifdef DEBUG
+#ifdef DEBUG_RTC
 Serial.print("Unixtime: ");Serial.println(dt.unixtime());
 #endif
     

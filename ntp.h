@@ -10,7 +10,7 @@
 /*
  * MACROS
  */
-//#define DEBUG
+//#define DEBUG_NTP
 #define TIMEZONE        0   //UTC
 
 /*
@@ -26,7 +26,7 @@ DateTime ntp_get()
   timeClient.begin();
 
   if ( timeClient.update() ) { 
-#ifdef DEBUG    
+#ifdef DEBUG_NTP    
       Serial.print("NTP: ");
       Serial.print(timeClient.getFormattedTime());
 #endif

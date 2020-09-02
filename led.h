@@ -11,7 +11,7 @@
 /*
  * MACROS
  */
-//#define DEBUG
+//#define DEBUG_LED
 
 /*    
  * Prototypes
@@ -58,7 +58,7 @@ void led_init()
     pinMode(GPIO_GREEN, OUTPUT);
     pinMode(GPIO_BLUE, OUTPUT);  
 
-#ifdef DEBUG
+#ifdef DEBUG_LED
 Serial.println("GPIO RGB r: ");Serial.print(GPIO_RED);Serial.print(" | g: ");Serial.print(GPIO_GREEN);Serial.print(" | b: ");Serial.print(GPIO_BLUE);
 delay(1000);led_modeerror;delay(1000);led_modesend();delay(1000);led_modeconfig();delay(1000);led_modenormal();delay(1000);
 #endif
