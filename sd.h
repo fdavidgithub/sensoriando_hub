@@ -41,31 +41,47 @@ void sd_dropdb();
 /*
  * functions
  */
+void sd_dropdb()
+{
+  File f;
+  
+  SD.remove(DATA_DB);
+  
+  f = SD.open(DATA_DB, FILE_WRITE);
+  f.close();
+}
+
 byte sd_readdatum(SensoriandoSensorDatum *datum)
 {
     File f;
-    byte buf[sizeof(SensoriandoSensorDatum)] = {};
-    int res;
+    byte buf[sizeof(SensoriandoSensorDatum)];
     static unsigned long pos=0;
 
-    if ( sd_init() ) {
-
+    datum->stx = NULL;
+    datum->id = NULL;
+    datum->value = NULL;
+    datum->etx = NULL;
+    
 #ifdef DEBUG_SD
 Serial.println("Reading DATA...");
 #endif                
 
     f = SD.open(DATA_DB);
-        res = f.available(); 
-        
-#ifdef DEBUG_SD
-Serial.print("DATA bytes: ");Serial.println(res);
-#endif                
-           
-        if ( res ) {
-          f.seek(pos);
-          f.read(buf, sizeof(buf));
-          pos = f.position();
-          memcpy(datum, buf, sizeof(buf));
+    f.seek(pos);
+Serial.print(">> ");Serial.println(f.available());           
+    if ( f.available() ) {
+        f.read(buf, sizeof(buf));
+        pos = f.position();      
+
+        if ( f.available() ) {
+            f.close();
+        } else {
+            f.close();
+            sd_dropdb();
+            pos = 0;            
+        }
+          
+        memcpy(datum, buf, sizeof(buf));
     
 #ifdef DEBUG_SD
 Serial.print("STX: 0x0");Serial.println(datum->stx, HEX);
@@ -74,17 +90,14 @@ Serial.print("value: ");Serial.println(datum->value, DEC);
 Serial.print("ETX: 0x0");Serial.println(datum->etx, HEX);
 Serial.println();
 #endif        
-        } else {
+    } else {
 #ifdef DEBUG_SD
 Serial.println("DATA file empty");
 #endif 
-          pos = 0;      
-        }
-        
-        f.close();     
+        pos = 0;      
     }
     
-    return res && (datum->stx == STX) && (datum->etx == ETX);
+    return (datum->stx == STX) && (datum->etx == ETX);
 }
 
 byte sd_init() 
@@ -121,16 +134,6 @@ Serial.println("Don't exists DATUM file");
   }
     
   return res;
-}
-
-void sd_dropdb()
-{
-    File f;
-    
-    SD.remove(DATA_DB); 
-    
-    f = SD.open(DATA_DB, FILE_WRITE);
-    f.close();
 }
 
 void sd_writemsg(char *msg) 

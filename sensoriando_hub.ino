@@ -217,7 +217,6 @@ Serial.println(reset_elapsedtime);
           mqtt_sendvalue(dt, datum.value, datum.id);  
         }
 
-        sd_dropdb();
         led_modenormal();
     }
 
