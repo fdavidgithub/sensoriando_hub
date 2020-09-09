@@ -14,6 +14,7 @@
 #define RTC_INITPASS        "RTC init, OK!"
 #define RTC_UPDFAIL         "RTC wasn't init: reboot!"
 #define RTC_UPDPASS         "Update RTC via NTP, OK!"
+#define RTC_NOW             "Unix time: %s"
 
 #define MQTT_CRC            "CRC do not match"
 #define MQTT_PASS           "MQTT init, OK!"

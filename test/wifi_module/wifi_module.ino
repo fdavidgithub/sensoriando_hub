@@ -161,10 +161,11 @@ void readSensor()
 {
   myData.stx = 0x02;
   myData.id = 42;
+  myData.dt = NULL;
   myData.value = random(1,100)/PI;  
   myData.etx = 0x03;
 
-  Serial.println(sizeof(myData));
+  Serial.print("Bytes sent: ");Serial.println(sizeof(myData));
   Serial.printf("stx=0x%02X, id=%d, value=%02f, etx=0x%02X\n", myData.stx, myData.id, myData.value, myData.etx);
 }
 

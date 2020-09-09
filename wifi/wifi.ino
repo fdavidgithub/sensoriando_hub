@@ -5,6 +5,7 @@
  */
 #include <sensoriandoData.h>
 #include <SimpleEspNowConnection.h>
+#include <time.h>
 #include "gpio.h"
 
 
@@ -15,7 +16,7 @@
 
 #define DEBOUNCE  500
 #define TIMEOUT   1000
-
+#define MSTOS     1000 //Milli seconds in seconds
 /*
  * GlobalVariables
  */
@@ -23,6 +24,14 @@ static SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 String inputString, clientAddress;
 
 SensoriandoSensorDatum myData;
+
+#ifdef DEBUG
+  time_t DtNow = 1599612713;
+#else
+  time_t DtNow = NULL;
+#endif
+
+long timeelapsed;
 
 
 /*
@@ -32,9 +41,13 @@ void OnSendError(uint8_t*);
 void OnMessage(uint8_t*, const uint8_t*, size_t);
 void OnPaired(uint8_t *, String);
 void OnConnected(uint8_t *, String);
-void Command(SensoriandoWifiCommand*);
-void serialflush();
+void CmdInit(SensoriandoWifiCommandInit *);
+void SerialFlush();
 
+
+/*
+ * Main
+ */
 void setup() 
 {
   Serial.begin(115200);
@@ -51,60 +64,66 @@ void setup()
 Serial.println();
 Serial.print("[Server] MAC ADDRESS: ");Serial.println(WiFi.macAddress());   
 #endif
+
+  timeelapsed = millis();
 }
 
 void loop() 
 {
-  SensoriandoWifiCommand mycmd;
-  long timeelapsed;
+  SensoriandoWifiCommandInit cmdinit = {NULL, NULL, NULL, NULL};
   byte stream = NULL;
+  byte bufstream[sizeof(cmdinit)] = {};
   
   simpleEspConnection.loop();
   
-  mycmd.stx = NULL;
-  mycmd.cmd = NULL;
-  mycmd.etx = NULL;
-
-  timeelapsed = millis();
-  while ( Serial.available() && ((millis() - timeelapsed) < TIMEOUT) ) {
-    digitalWrite(GPIO_LED, 0);
-    stream = Serial.read();
+  if ( (DtNow != NULL) && ((millis() - timeelapsed) >= MSTOS) ) {
+      DtNow++; 
+      timeelapsed = millis(); 
 
 #ifdef DEBUG
-Serial.print(stream, HEX);
+struct tm  ts;
+char       buf[80];
+ts = *localtime(&DtNow);
+strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+Serial.printf("%s\n", buf);
 #endif
-
-    switch ( stream ) {
-        case SYN: break; 
-        case STX: mycmd.stx = STX; 
-#ifdef DEBUG
-Serial.println("stx");
-#endif
-                  break;
-        case ETX: mycmd.etx = ETX; 
-#ifdef DEBUG
-Serial.println("etx");
-#endif
-                  break;
-        default: mycmd.cmd = stream; 
-#ifdef DEBUG
-Serial.println("cmd");
-#endif
-    }
-
-    if ( (mycmd.stx == STX) && (mycmd.etx == ETX) ) {
-#ifdef DEBUG
-Serial.print("Incomme command: ");Serial.println(mycmd.cmd, HEX);
-#endif  
-        command(&mycmd);
-        serialflush();
-        break;
-    }
-
-    delay(1);
   }
+  
+  if ( Serial.available() ) {
+    digitalWrite(GPIO_LED, 0);
+    
+    Serial.readBytes(bufstream, sizeof(bufstream));
+    delay(1);
 
-  if ( stream ) {
+    memcpy(&cmdinit, bufstream, sizeof(bufstream));
+    
+#ifdef DEBUG
+Serial.print("[CMD] Reading (bytes): ");Serial.println(sizeof(cmdinit), DEC);
+Serial.print("STX: ");Serial.println(cmdinit.stx, HEX);
+Serial.print("cmd: ");Serial.println(cmdinit.cmd, HEX);
+Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
+Serial.print("ETX: ");Serial.println(cmdinit.etx, HEX);
+#endif
+
+    if ( (cmdinit.stx == STX) && (cmdinit.etx == ETX) ) {
+#ifdef DEBUG
+Serial.print("Incomme command: 0x");Serial.println(cmdinit.cmd, HEX);
+#endif 
+        switch ( cmdinit.cmd ) {
+          case CMD_INIT: CmdInit(&cmdinit);
+                         break;   
+          default: 
+#ifdef DEBUG
+Serial.println("WHATTT???!!!!");
+#endif           
+                break;
+        }
+    } else {
+#ifdef DEBUG
+Serial.println("Incomme serial: Nothing");
+#endif        
+    }
+
     digitalWrite(GPIO_LED, 1);  
   }
       
@@ -119,32 +138,55 @@ Serial.println("Pairing started...");
   
 }
 
+
 /*
  * functions
  */
-void serialflush()
+void SerialFlush()
 {
   while ( Serial.available()  ) {
     Serial.read();    
+    delay(1);
   }
 }
 
-void command(SensoriandoWifiCommand* mycmd)
+void CmdInit(SensoriandoWifiCommandInit *cmdinit)
 { 
-  switch ( mycmd->cmd ) {
-      case CMD_INIT:  mycmd->cmd = ACK;
-                      break;
-      default: mycmd->cmd = NAK;
-  }
+  SensoriandoWifiCommandResult cmdresult;
 
-  Serial.write(SYN);Serial.write(SYN);
-  Serial.write(mycmd->stx);
-  Serial.write(mycmd->cmd);
-  Serial.write(mycmd->etx);
+#ifdef DEBUG
+Serial.println("Command**********");
+Serial.print("STX: ");Serial.println(cmdinit->stx, HEX);
+Serial.print("cmd: ");Serial.println(cmdinit->cmd, HEX);
+Serial.print("dt: ");Serial.println(cmdinit->param, DEC);
+Serial.print("ETX: ");Serial.println(cmdinit->etx, HEX);
+Serial.println();
+#endif
+
+  cmdresult.stx = STX;
+  cmdresult.etx = ETX;
+  cmdresult.res = NAK;
+  cmdresult.cmd = cmdinit->cmd;
+  
+  if ( cmdinit->cmd = CMD_INIT) {
+      DtNow = cmdinit->param;
+      timeelapsed = millis();
+      cmdresult.res = ACK;    
+  }
   
 #ifdef DEBUG
-Serial.print("Result command: ");Serial.println(mycmd->cmd, HEX);
+Serial.println("Result************");
+Serial.print("STX: ");Serial.println(cmdresult.stx, HEX);
+Serial.print("cmd: ");Serial.println(cmdresult.cmd, HEX);
+Serial.print("result: ");Serial.println(cmdresult.res, DEC);
+Serial.print("ETX: ");Serial.println(cmdresult.etx, HEX);
+Serial.println();
 #endif    
+
+  SerialFlush();
+  
+  Serial.write((uint8_t *)&cmdresult, sizeof(cmdresult));
+  delay(1);
 }
 
 void OnSendError(uint8_t* ad)
@@ -155,7 +197,9 @@ void OnSendError(uint8_t* ad)
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   digitalWrite(GPIO_LED, 0);
+  
   memcpy(&myData, message, sizeof(myData));
+  myData.dt = DtNow;
 
 #ifdef DEBUG
 Serial.print("From client: ");Serial.println(simpleEspConnection.macToStr(ad));
@@ -163,11 +207,19 @@ Serial.print("Bytes received: ");Serial.println(len, DEC);
 Serial.print("STX: ");Serial.println(myData.stx, HEX);
 Serial.print("id: ");Serial.println(myData.id, DEC);
 Serial.print("value: ");Serial.println(myData.value, DEC);
+Serial.print("dt: ");Serial.println(myData.dt, DEC);
 Serial.print("ETX: ");Serial.println(myData.etx, HEX);
 Serial.println();
 #endif
 
-  Serial.write((uint8_t *)&myData, sizeof(myData));
+  if (myData.dt != NULL) {
+      Serial.write((uint8_t *)&myData, sizeof(myData));
+  } else {
+#ifdef DEBUG
+Serial.println("Do not init!!!");
+#endif     
+  }
+  
   digitalWrite(GPIO_LED, 1);  
 }
 

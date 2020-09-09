@@ -142,7 +142,13 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
        
     // Wifi    
-    if ( !wifi_init() ) {
+    dt_rtc = rtc_get(); 
+
+#ifdef DEBUG
+Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
+#endif
+    
+    if ( !wifi_init(dt_rtc.unixtime()) ) {
         led_modeerror();
         logthing(WIFI_FAIL);
         resetFunc();
@@ -152,18 +158,16 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
  
     // Done
     led_modenormal();
-    update_elapsedtime = millis();
-
     logthing(WAIT_READ);
+    
+    update_elapsedtime = millis();    
 }
  
 void loop()
 {   
-    SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL};
-    char sent[256];
+    SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL, NULL};
     DateTime dt;
-    byte i;
-    long reset_elapsedtime=0;
+    long reset_elapsedtime;
 
 
     /*
@@ -172,19 +176,16 @@ void loop()
     #ifdef GPIO_RESET
     if ( digitalRead(GPIO_RESET) ) {
         led_modeerror();
+        reset_elapsedtime=millis();
         
-        while ( reset_elapsedtime < THING_RESET && digitalRead(GPIO_RESET) ) {
-            reset_elapsedtime++;
-            delay(1);
-
+        while ( ((millis() - reset_elapsedtime) < THING_RESET) && digitalRead(GPIO_RESET) ) {
 #ifdef DEBUG
 Serial.println(reset_elapsedtime);
 #endif
         }
 
-        if ( reset_elapsedtime >= THING_RESET && digitalRead(GPIO_RESET) ) {
-            logthing(WIFI_RESET);
-            
+        if ( (millis()-reset_elapsedtime) >= THING_RESET && digitalRead(GPIO_RESET) ) {
+            logthing(WIFI_RESET);    
             delay(THING_DEBOUNCE);
             resetFunc();
         } else {
@@ -197,15 +198,10 @@ Serial.println(reset_elapsedtime);
     /*
      * Receive data
      */
-    if ( wifi_available(&datum) ) {
-        sd_writedatum(&datum);  
-    }
-
     if ( (millis() - update_elapsedtime) >= THING_UPDATE ) {
         update_elapsedtime = millis();
 
         mqtt_reconnect();
-
         dt = rtc_get(); 
 
         led_modesend();
@@ -213,10 +209,22 @@ Serial.println(reset_elapsedtime);
         mqtt_senddatetime(dt, dt.unixtime());
         mqtt_sendstorage(dt, sd_freespace()); 
 
-        while ( sd_readdatum(&datum) ) {
-          mqtt_sendvalue(dt, datum.value, datum.id);  
-        }
+        led_modenormal();
+    }
 
+    if ( wifi_available(&datum) ) {
+        led_modesend();
+
+#ifdef DEBUG
+Serial.print("[Send MQTT] Bytes received: ");Serial.println(sizeof(datum), DEC);
+Serial.print("STX: ");Serial.println(datum.stx, HEX);
+Serial.print("id: ");Serial.println(datum.id, DEC);
+Serial.print("value: ");Serial.println(datum.value, DEC);
+Serial.print("dt: ");Serial.println(datum.dt, DEC);
+Serial.print("ETX: ");Serial.println(datum.etx, HEX);
+Serial.println();
+#endif          
+        mqtt_sendvalue(datum.dt, datum.value, datum.id);  
         led_modenormal();
     }
 

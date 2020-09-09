@@ -5,9 +5,9 @@
 #define GPIO_H
 
 //#define GPIO_RESET   D0   
-#define GPIO_RED     A0           
+#define GPIO_RED     A2           
 #define GPIO_GREEN   A1      
-#define GPIO_BLUE    A2      
+#define GPIO_BLUE    A0      
 
 /*
  * Nanoshield microSD

@@ -5,11 +5,12 @@
 #define WIFI_H
 
 #include <sensoriandoData.h>
+#include <time.h>
 
 /*
  * MACROS
  */
-//#define DEBUG_WIFI
+#define DEBUG_WIFI
 
 #define TIMEOUT 5000
 
@@ -21,7 +22,7 @@
 /*
  * Prototypes
  */
-byte wifi_init();
+byte wifi_init(long);
 byte wifi_available(SensoriandoSensorDatum *); 
 
  
@@ -32,21 +33,20 @@ byte wifi_available(SensoriandoSensorDatum *datum) {
     byte stream[sizeof(SensoriandoSensorDatum)];
     
     if ( Serial1.available() ) {
-        Serial1.readBytes(stream, sizeof(SensoriandoSensorDatum));
+        Serial1.readBytes(stream, sizeof(stream));
 
 #ifdef DEBUG_WIFI
-Serial.write(stream, sizeof(SensoriandoSensorDatum));
+Serial.write(stream, sizeof(stream));
 #endif
-
-        delay(1);
-        
-        memcpy(datum, stream, sizeof(SensoriandoSensorDatum));
+       
+        memcpy(datum, stream, sizeof(stream));
 
 #ifdef DEBUG_WIFI
-Serial.print("Bytes received: ");Serial.println(sizeof(SensoriandoSensorDatum), DEC);
+Serial.print("[AVAILABLE] Bytes received: ");Serial.println(sizeof(SensoriandoSensorDatum), DEC);
 Serial.print("STX: 0x");Serial.println(datum->stx, HEX);
 Serial.print("id: ");Serial.println(datum->id, DEC);
 Serial.print("value: ");Serial.println(datum->value, DEC);
+Serial.print("dt: ");Serial.println(datum->dt, DEC);
 Serial.print("ETX: 0x");Serial.println(datum->etx, HEX);
 Serial.println();
 #endif
@@ -56,52 +56,56 @@ Serial.println();
     return (datum->stx == STX) && (datum->etx == ETX);
 }
 
-byte wifi_init() {
-    SensoriandoWifiCommand mycmd;
+byte wifi_init(long epoch) {
+    SensoriandoWifiCommandInit cmdinit;
+    SensoriandoWifiCommandResult cmdresult = {NULL, NULL, NULL, NULL};
     long timeelapsed;
-    byte stream;
-    
+    byte bufstream[sizeof(cmdresult)] = {};
+
+    //Send command
     Serial1.begin(115200);
 
-    Serial1.write(SYN);
-    Serial1.write(SYN);
-    Serial1.write(STX);
-    Serial1.write(CMD_INIT);
-    Serial1.write(ETX);
-    delay(1);
+    cmdinit.stx = STX;
+    cmdinit.cmd = CMD_INIT;
+    cmdinit.param = epoch;
+    cmdinit.etx = ETX;
 
-    mycmd.stx = NULL;
-    mycmd.cmd = NULL;
-    mycmd.etx = NULL;
+#ifdef DEBUG_WIFI
+Serial.print("[CMD INIT] Writing (bytes): ");Serial.println(sizeof(cmdinit), DEC);
+Serial.print("STX: 0x");Serial.println(cmdinit.stx, HEX);
+Serial.print("cmd: 0x");Serial.println(cmdinit.cmd, HEX);
+Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
+Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
+Serial.println();
+#endif
+ 
+    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+    delay(1);
     
+    //Waiting anwser
     timeelapsed = millis();   
     while ( (millis() - timeelapsed) < TIMEOUT) {
       if ( Serial1.available() ) {
-          stream = Serial1.read();
+          Serial1.readBytes(bufstream, sizeof(bufstream));
+          memcpy(&cmdresult, bufstream, sizeof(bufstream));
 
-          switch ( stream ) {
-            case SYN: break;
-            case STX: mycmd.stx = STX;
-                      break;
-            case ETX: mycmd.etx = ETX;
-                      break;
-            default: mycmd.cmd = stream;
-          }
-      }
-
-      if ( mycmd.etx == ETX ) {
 #ifdef DEBUG_WIFI
-Serial.println(mycmd.stx, HEX);
-Serial.println(mycmd.cmd, HEX);
-Serial.println(mycmd.etx, HEX);
+Serial.print("STX: 0x");Serial.println(cmdresult.stx, HEX);
+Serial.print("cmd: 0x");Serial.println(cmdresult.cmd, HEX);
+Serial.print("result: 0x");Serial.println(cmdresult.res, HEX);
+Serial.print("ETX: 0x");Serial.println(cmdresult.etx, HEX);
+Serial.println();
 #endif
-        break;
+
+          break;
       }
 
       delay(1);
     }
 
-    return (mycmd.cmd == ACK) && (mycmd.stx == STX) && (mycmd.etx == ETX);
+    //Valid   
+    return (cmdresult.cmd == CMD_INIT) && (cmdresult.res == ACK) && \
+           (cmdresult.stx == STX) && (cmdresult.etx == ETX);
 }
 
 #endif
