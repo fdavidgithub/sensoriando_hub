@@ -33,6 +33,8 @@ byte wifi_available(SensoriandoSensorDatum *datum) {
     byte stream[sizeof(SensoriandoSensorDatum)];
     
     if ( Serial1.available() ) {
+      if ( Serial1.read() == SYN ) {
+        delay(1);
         Serial1.readBytes(stream, sizeof(stream));
 
 #ifdef DEBUG_WIFI
@@ -50,7 +52,11 @@ Serial.print("dt: ");Serial.println(datum->dt, DEC);
 Serial.print("ETX: 0x");Serial.println(datum->etx, HEX);
 Serial.println();
 #endif
-
+      } else {
+#ifdef DEBUG
+Serial.println("[AVAILABLE] No Sync");
+#endif        
+      }
     }
 
     return (datum->stx == STX) && (datum->etx == ETX);
@@ -78,15 +84,19 @@ Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
 Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
 Serial.println();
 #endif
- 
-    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+
+    Serial1.write(SYN);
     delay(1);
+    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
     
     //Waiting anwser
     timeelapsed = millis();   
     while ( (millis() - timeelapsed) < TIMEOUT) {
       if ( Serial1.available() ) {
+        if ( Serial1.read() == SYN ) {
+          delay(1);
           Serial1.readBytes(bufstream, sizeof(bufstream));
+          
           memcpy(&cmdresult, bufstream, sizeof(bufstream));
 
 #ifdef DEBUG_WIFI
@@ -98,6 +108,11 @@ Serial.println();
 #endif
 
           break;
+        } else {
+#ifdef DEBUG
+Serial.println("[INIT] No Sync");
+#endif                  
+        }
       }
 
       delay(1);

@@ -26,7 +26,7 @@ String inputString, clientAddress;
 SensoriandoSensorDatum myData;
 
 #ifdef DEBUG
-  time_t DtNow = 1599612713;
+  time_t DtNow = 1599788357;
 #else
   time_t DtNow = NULL;
 #endif
@@ -85,17 +85,16 @@ struct tm  ts;
 char       buf[80];
 ts = *localtime(&DtNow);
 strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
-Serial.printf("%s\n", buf);
+Serial.print(DtNow);Serial.printf(" | %s\n",buf);
 #endif
   }
   
   if ( Serial.available() ) {
-    digitalWrite(GPIO_LED, 0);
-    
-    Serial.readBytes(bufstream, sizeof(bufstream));
-    delay(1);
-
-    memcpy(&cmdinit, bufstream, sizeof(bufstream));
+    if ( Serial.read() == SYN ) {
+      digitalWrite(GPIO_LED, 0);
+      
+      Serial.readBytes(bufstream, sizeof(bufstream));
+      memcpy(&cmdinit, bufstream, sizeof(bufstream));
     
 #ifdef DEBUG
 Serial.print("[CMD] Reading (bytes): ");Serial.println(sizeof(cmdinit), DEC);
@@ -105,26 +104,31 @@ Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
 Serial.print("ETX: ");Serial.println(cmdinit.etx, HEX);
 #endif
 
-    if ( (cmdinit.stx == STX) && (cmdinit.etx == ETX) ) {
+      if ( (cmdinit.stx == STX) && (cmdinit.etx == ETX) ) {
 #ifdef DEBUG
 Serial.print("Incomme command: 0x");Serial.println(cmdinit.cmd, HEX);
 #endif 
-        switch ( cmdinit.cmd ) {
-          case CMD_INIT: CmdInit(&cmdinit);
-                         break;   
-          default: 
+          switch ( cmdinit.cmd ) {
+            case CMD_INIT: CmdInit(&cmdinit);
+                           break;   
+            default: 
 #ifdef DEBUG
 Serial.println("WHATTT???!!!!");
 #endif           
-                break;
-        }
-    } else {
+                  break;
+          }
+      } else {
 #ifdef DEBUG
 Serial.println("Incomme serial: Nothing");
 #endif        
-    }
+      }
 
-    digitalWrite(GPIO_LED, 1);  
+      digitalWrite(GPIO_LED, 1);  
+    } else {
+#ifdef DEBUG
+Serial.println("[LOOP] No Sync");
+#endif       
+    }
   }
       
   if ( digitalRead(GPIO_PAIR) ) {
@@ -184,9 +188,10 @@ Serial.println();
 #endif    
 
   SerialFlush();
-  
-  Serial.write((uint8_t *)&cmdresult, sizeof(cmdresult));
+
+  Serial.write(SYN);
   delay(1);
+  Serial.write((uint8_t *)&cmdresult, sizeof(cmdresult));
 }
 
 void OnSendError(uint8_t* ad)
@@ -213,6 +218,8 @@ Serial.println();
 #endif
 
   if (myData.dt != NULL) {
+      Serial.write(SYN);
+      delay(1);
       Serial.write((uint8_t *)&myData, sizeof(myData));
   } else {
 #ifdef DEBUG
