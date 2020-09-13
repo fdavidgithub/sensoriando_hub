@@ -1,30 +1,5 @@
-/*
- * 
- */
-#ifndef LED_H
-#define LED_H
+#include "led.h"
 
-#ifndef GPIO_H
-  #include "gpio.h"
-#endif
-
-/*
- * MACROS
- */
-//#define DEBUG_LED
-
-/*    
- * Prototypes
- */
-void led_modeerror();
-void led_modeconfig();
-void led_modenormal();
-void led_modesend();
-void led_init();
-
-/*
- * functions
- */
 void led_modeerror() {
    analogWrite(GPIO_RED, 255);
    analogWrite(GPIO_GREEN, 0);
@@ -66,4 +41,3 @@ delay(1000);led_modeerror;delay(1000);led_modesend();delay(1000);led_modeconfig(
     led_modenormal();
 }
 
-#endif

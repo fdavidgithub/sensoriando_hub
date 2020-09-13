@@ -20,15 +20,15 @@
  */
 #include <sensoriando.h>
 
-#include "gpio.h"
-#include "messages.h"
-#include "sd.h"
-#include "rtc.h"
-#include "ntp.h"
-#include "mqtt.h"
-#include "led.h"
-#include "ethernet.h"
-#include "wifi.h"
+#include "src/gpio.h"
+#include "src/messages.h"
+#include "src/sd.h"
+#include "src/rtc.h"
+#include "src/ntp.h"
+#include "src/mqtt.h"
+#include "src/led.h"
+#include "src/ethernet.h"
+#include "src/wifi.h"
 
 
 /*

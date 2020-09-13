@@ -37,10 +37,7 @@ void mqtt_senddatetime(DateTime, long);
 void mqtt_sendstorage(DateTime, float);
 void mqtt_sendmessage(DateTime, char *);
 
- 
-/*
- * functions
- */
+
 byte mqtt_init()
 {
     byte res;

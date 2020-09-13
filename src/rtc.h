@@ -27,10 +27,9 @@ Nanoshield_RTC rtcclient;
 byte rtc_init();
 DateTime rtc_get();
 byte rtc_check();
- 
-/*
- * functions
- */
+void rtc_sync(DateTime, DateTime);
+
+
 byte rtc_init () { 
   byte res;
 
