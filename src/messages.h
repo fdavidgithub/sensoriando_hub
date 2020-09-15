@@ -6,6 +6,7 @@
  
 #define WAIT_READ           "Waiting..."
 #define SYS_REBOOT          "Critical error: rebooting"
+#define SYS_SENT            "Data system sent to broker"
  
 #define WIFI_RESET          "Wifi setting reseted"
 #define WIFI_FAIL           "Wifi fail: reboot!"

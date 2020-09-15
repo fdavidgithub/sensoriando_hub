@@ -227,7 +227,8 @@ Serial.println(reset_elapsedtime);
         dt = rtc_get(); 
 
         led_modesend();
-        
+
+        logthing(SYS_SENT);   
         mqtt_senddatetime(dt, dt.unixtime());
         mqtt_sendstorage(dt, sd_freespace()); 
 
