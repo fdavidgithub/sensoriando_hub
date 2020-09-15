@@ -36,7 +36,13 @@
  */
 #define DEBUG
 
-#define THING_UPDATE    1000    //Update server in miliseconds
+#ifndef DEBUG
+    #define SYSTEM_UPDATE   3600000     //Send data system to broker (in miliseconds)
+                                        //1 h = 60 min = 3600 s = 3600000 ms
+#else
+    #define SYSTEM_UPDATE   1000
+#endif
+
 #define THING_RESET     5000
 #define THING_DEBOUNCE  1000
 
@@ -44,7 +50,7 @@
 /* 
  * GlobalVariables
  */
-long update_elapsedtime;
+long sensor_elapsedtime;
 
 
 /*
@@ -160,7 +166,7 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
     led_modenormal();
     logthing(WAIT_READ);
     
-    update_elapsedtime = millis();    
+    sensor_elapsedtime = millis();    
 }
  
 void loop()
@@ -196,10 +202,10 @@ Serial.println(reset_elapsedtime);
 
 
     /*
-     * Receive data
+     * Receive/Send Data
      */
-    if ( (millis() - update_elapsedtime) >= THING_UPDATE ) {
-        update_elapsedtime = millis();
+    if ( (millis() - sensor_elapsedtime) >= SYSTEM_UPDATE ) {
+        sensor_elapsedtime = millis();
 
         mqtt_reconnect();
         dt = rtc_get(); 
