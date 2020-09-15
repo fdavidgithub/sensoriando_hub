@@ -67,11 +67,13 @@ void setup()
 {
     char logmsg[256];
     DateTime dt_rtc;
-    
+    byte status_sd, status_ethernet;
+
     #ifdef DEBUG
         Serial.begin(9600);
         Serial.println("Setting...");
     #endif
+
 
     /*
      * GPIO Setting
@@ -87,6 +89,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     led_init();    
     led_modeconfig();
 
+
     /* 
      * Inits OFFLINE
      */
@@ -100,16 +103,19 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
 
     //microSD
-    if ( ! sd_init() ){
+    status_sd = sd_init();
+
+    if ( ! status_sd ){
         led_modeerror();
         logthing(SD_INITFAIL);
-        resetFunc();
     } else {
         logthing(SD_INITPASS); 
     }
     
     //Ethernet
-    if ( ! ethernet_init() ){
+    status_ethernet = ethernet_init();
+
+    if ( ! status_ethernet ){
         led_modeerror();
         logthing(ETHERNET_DONOTCONFIG);
 /*
@@ -118,10 +124,18 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
         } else if (Ethernet.linkStatus() == LinkOFF) {
             logthing(ETHERNET_CABLENOTCONNECT);
         }
-*/      
+      
         resetFunc();
+*/
     } else {
         logthing(ETHERNET_PASS);        
+    }
+
+    // Valid Erros
+    if ( (! status_sd) && (! status_ethernet) ) {
+        led_modeerror();
+        logthing(SYS_REBOOT);
+        resetFunc();
     }
 
 
@@ -142,7 +156,6 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     if ( !mqtt_init() ) {
         led_modeerror();
         logthing(MQTT_FAIL);
-        resetFunc();      
     } else {
         logthing(MQTT_PASS);      
     }
@@ -162,7 +175,10 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
         logthing(WIFI_PASS);
     }
  
-    // Done
+
+    /*
+     * Done
+     */
     led_modenormal();
     logthing(WAIT_READ);
     

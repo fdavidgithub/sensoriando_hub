@@ -5,7 +5,8 @@
 #define MESSAGE_H
  
 #define WAIT_READ           "Waiting..."
-
+#define SYS_REBOOT          "Critical error: rebooting"
+ 
 #define WIFI_RESET          "Wifi setting reseted"
 #define WIFI_FAIL           "Wifi fail: reboot!"
 #define WIFI_PASS           "Wifi init, OK!"
