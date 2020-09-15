@@ -50,7 +50,7 @@
 /* 
  * GlobalVariables
  */
-long sensor_elapsedtime;
+long system_elapsedtime;
 
 
 /*
@@ -166,7 +166,7 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
     led_modenormal();
     logthing(WAIT_READ);
     
-    sensor_elapsedtime = millis();    
+    system_elapsedtime = millis();    
 }
  
 void loop()
@@ -204,8 +204,8 @@ Serial.println(reset_elapsedtime);
     /*
      * Receive/Send Data
      */
-    if ( (millis() - sensor_elapsedtime) >= SYSTEM_UPDATE ) {
-        sensor_elapsedtime = millis();
+    if ( (millis() - system_elapsedtime) >= SYSTEM_UPDATE ) {
+        system_elapsedtime = millis();
 
         mqtt_reconnect();
         dt = rtc_get(); 
