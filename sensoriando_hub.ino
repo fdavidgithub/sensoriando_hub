@@ -222,17 +222,17 @@ Serial.println(reset_elapsedtime);
      */
     if ( (millis() - system_elapsedtime) >= SYSTEM_UPDATE ) {
         system_elapsedtime = millis();
-
-        mqtt_reconnect();
         dt = rtc_get(); 
 
-        led_modesend();
+        if ( mqtt_reconnect() ) {
+            led_modesend();
 
-        logthing(SYS_SENT);   
-        mqtt_senddatetime(dt, dt.unixtime());
-        mqtt_sendstorage(dt, sd_freespace()); 
+            logthing(SYS_SENT);   
+            mqtt_senddatetime(dt, dt.unixtime());
+            mqtt_sendstorage(dt, sd_freespace()); 
 
-        led_modenormal();
+            led_modenormal();
+        }
     }
 
     if ( wifi_available(&datum) ) {
@@ -245,11 +245,11 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        mqtt_reconnect();
-
-        led_modesend();
-        mqtt_sendvalue(datum.dt, datum.value, datum.id); 
-        led_modenormal();
+        if ( mqtt_reconnect() ) {
+            led_modesend();
+            mqtt_sendvalue(datum.dt, datum.value, datum.id); 
+            led_modenormal();
+        }
     }
 
 }

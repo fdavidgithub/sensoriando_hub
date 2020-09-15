@@ -31,7 +31,7 @@ PubSubClient mqttclient(ethernetclient);
  * Prototypes
  */
 byte mqtt_init();
-void mqtt_reconnect();
+byte mqtt_reconnect();
 void mqtt_sendvalue(DateTime, float, int);
 void mqtt_senddatetime(DateTime, long);
 void mqtt_sendstorage(DateTime, float);
@@ -47,7 +47,7 @@ byte mqtt_init()
     return res;
 }
  
-void mqtt_reconnect() 
+byte mqtt_reconnect() 
 {
     if ( !mqttclient.connected() ) {
 #ifdef DEBUG_MQTT
@@ -65,6 +65,8 @@ void mqtt_reconnect()
 #endif      
         }
     }
+
+    return mqttclient.connected();
 }
 
 
