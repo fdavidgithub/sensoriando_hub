@@ -193,7 +193,7 @@ void loop()
 
 
     /*
-     * Check if is necessary new ESSID
+     * Check if is necessary reset system
      */
     #ifdef GPIO_RESET
     if ( digitalRead(GPIO_RESET) ) {
