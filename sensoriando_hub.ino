@@ -249,6 +249,9 @@ Serial.println();
             led_modesend();
             mqtt_sendvalue(datum.dt, datum.value, datum.id); 
             led_modenormal();
+        } else {
+            logthing(MQTT_SENSOR);
+            sd_writedatum(&datum);
         }
     }
 

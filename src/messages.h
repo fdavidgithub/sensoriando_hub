@@ -21,6 +21,7 @@
 #define MQTT_CRC            "CRC do not match"
 #define MQTT_PASS           "MQTT init, OK!"
 #define MQTT_FAIL           "MQTT passed!"
+#define MQTT_SENSOR         "[Data Sensor] Broker don't connected: Writing SD!"
 
 #define SD_INITFAIL             "SD fail: reboot!"
 #define SD_INITPASS             "SD init, OK!"
