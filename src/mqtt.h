@@ -49,7 +49,7 @@ byte mqtt_init()
  
 void mqtt_reconnect() 
 {
-    while ( !mqttclient.connected() ) {
+    if ( !mqttclient.connected() ) {
 #ifdef DEBUG_MQTT
         Serial.print("Attempting MQTT connection...");
 #endif
@@ -59,14 +59,10 @@ void mqtt_reconnect()
 #endif
 
         } else {
-
 #ifdef DEBUG_MQTT
             Serial.print("failed, rc=");
             Serial.print(mqttclient.state());
-            Serial.println(" try again in 5 seconds");
 #endif      
-      
-            delay(5000);
         }
     }
 }

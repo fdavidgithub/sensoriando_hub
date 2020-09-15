@@ -236,8 +236,6 @@ Serial.println(reset_elapsedtime);
     }
 
     if ( wifi_available(&datum) ) {
-        led_modesend();
-
 #ifdef DEBUG
 Serial.print("[Send MQTT] Bytes received: ");Serial.println(sizeof(datum), DEC);
 Serial.print("STX: ");Serial.println(datum.stx, HEX);
@@ -247,7 +245,10 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        mqtt_sendvalue(datum.dt, datum.value, datum.id);  
+        mqtt_reconnect();
+
+        led_modesend();
+        mqtt_sendvalue(datum.dt, datum.value, datum.id); 
         led_modenormal();
     }
 
