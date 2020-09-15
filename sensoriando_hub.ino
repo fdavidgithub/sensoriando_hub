@@ -50,8 +50,8 @@
 /* 
  * GlobalVariables
  */
-long system_elapsedtime;
-
+long SystemElapsedTime;
+byte InitializedSd, InitializedEth;
 
 /*
  * prototypes
@@ -67,7 +67,6 @@ void setup()
 {
     char logmsg[256];
     DateTime dt_rtc;
-    byte status_sd, status_ethernet;
 
     #ifdef DEBUG
         Serial.begin(9600);
@@ -103,9 +102,9 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
 
     //microSD
-    status_sd = sd_init();
+    InitializedSd = sd_init();
 
-    if ( ! status_sd ){
+    if ( ! InitializedSd ){
         led_modeerror();
         logthing(SD_INITFAIL);
     } else {
@@ -113,9 +112,9 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
     
     //Ethernet
-    status_ethernet = ethernet_init();
+    InitializedEth = ethernet_init();
 
-    if ( ! status_ethernet ){
+    if ( ! InitializedEth ){
         led_modeerror();
         logthing(ETHERNET_DONOTCONFIG);
 /*
@@ -132,7 +131,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
 
     // Valid Erros
-    if ( (! status_sd) && (! status_ethernet) ) {
+    if ( (! InitializedSd) && (! InitializedEth) ) {
         led_modeerror();
         logthing(SYS_REBOOT);
         resetFunc();
@@ -182,7 +181,7 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
     led_modenormal();
     logthing(WAIT_READ);
     
-    system_elapsedtime = millis();    
+    SystemElapsedTime = millis();    
 }
  
 void loop()
@@ -218,10 +217,32 @@ Serial.println(reset_elapsedtime);
 
 
     /*
+     * Check critical devices
+     */
+    if ( ! InitializedSd ) {
+        if ( ! sd_init() ) {
+            led_modeerror();
+            logthing(SD_INITFAIL);
+        } else {
+            InitializedSd = 1;
+        }
+    }
+
+    if ( ! InitializedEth ) {
+        if ( ! ethernet_init() ) {
+            led_modeerror();
+            logthing(ETHERNET_DONOTCONFIG);
+        } else {
+            InitializedEth = 1;
+        }
+    }
+
+
+    /*
      * Receive/Send Data
      */
-    if ( (millis() - system_elapsedtime) >= SYSTEM_UPDATE ) {
-        system_elapsedtime = millis();
+    if ( (millis() - SystemElapsedTime) >= SYSTEM_UPDATE ) {
+        SystemElapsedTime = millis();
         dt = rtc_get(); 
 
         if ( mqtt_reconnect() ) {
