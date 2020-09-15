@@ -16,14 +16,17 @@
  */
 //#define DEBUG_LED
 
+#define MODESEND_UPDATE 300000  //Blink mode send in miliseconds
+                                //5 min = 300 s = 300000 ms
+
 
 /*    
  * Prototypes
  */
-void led_modeerror();
-void led_modeconfig();
+long led_modeerror();
+long led_modeconfig();
 void led_modenormal();
-void led_modesend();
+void led_modesend(long);
 void led_init();
 
 #endif

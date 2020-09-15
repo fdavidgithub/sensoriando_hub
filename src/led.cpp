@@ -1,16 +1,20 @@
 #include "led.h"
 
-void led_modeerror() {
-   analogWrite(GPIO_RED, 255);
-   analogWrite(GPIO_GREEN, 0);
-   analogWrite(GPIO_BLUE, 0);
+long led_modeerror() {
+    analogWrite(GPIO_RED, 255);
+    analogWrite(GPIO_GREEN, 0);
+    analogWrite(GPIO_BLUE, 0);
+
+    return millis();
 }
 
-void led_modeconfig()
+long led_modeconfig()
 {
     analogWrite(GPIO_RED, 0);
     analogWrite(GPIO_GREEN, 0);
     analogWrite(GPIO_BLUE, 255);
+
+    return millis();
 }
 
 void led_modenormal()
@@ -20,11 +24,13 @@ void led_modenormal()
     analogWrite(GPIO_BLUE, 0);
 }
 
-void led_modesend()
+void led_modesend(long elapsed)
 {
-    analogWrite(GPIO_RED, 0);
-    analogWrite(GPIO_GREEN, 255);
-    analogWrite(GPIO_BLUE, 0);
+    if ( (millis() - elapsed) < MODESEND_UPDATE ) {
+        analogWrite(GPIO_RED, 0);
+        analogWrite(GPIO_GREEN, 255);
+        analogWrite(GPIO_BLUE, 0);
+    }
 } 
 
 void led_init()

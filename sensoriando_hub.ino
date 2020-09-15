@@ -53,6 +53,7 @@
 long SystemElapsedTime;
 byte InitializedSd, InitializedEth;
 
+
 /*
  * prototypes
  */
@@ -189,6 +190,7 @@ void loop()
     SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL, NULL};
     DateTime dt;
     long reset_elapsedtime;
+    static long led_elapsedtime = millis();
 
 
     /*
@@ -196,7 +198,7 @@ void loop()
      */
     #ifdef GPIO_RESET
     if ( digitalRead(GPIO_RESET) ) {
-        led_modeerror();
+        led_elapsedtime = led_modeerror();
         reset_elapsedtime=millis();
         
         while ( ((millis() - reset_elapsedtime) < THING_RESET) && digitalRead(GPIO_RESET) ) {
@@ -221,7 +223,7 @@ Serial.println(reset_elapsedtime);
      */
     if ( ! InitializedSd ) {
         if ( ! sd_init() ) {
-            led_modeerror();
+            led_elapsedtime = led_modeerror();
             logthing(SD_INITFAIL);
         } else {
             InitializedSd = 1;
@@ -230,7 +232,7 @@ Serial.println(reset_elapsedtime);
 
     if ( ! InitializedEth ) {
         if ( ! ethernet_init() ) {
-            led_modeerror();
+            led_elapsedtime = led_modeerror();
             logthing(ETHERNET_DONOTCONFIG);
         } else {
             InitializedEth = 1;
@@ -246,9 +248,9 @@ Serial.println(reset_elapsedtime);
         dt = rtc_get(); 
 
         if ( mqtt_reconnect() ) {
-            led_modesend();
+            led_modesend(led_elapsedtime);
 
-            logthing(SYS_SENT);   
+//            logthing(SYS_SENT);   
             mqtt_senddatetime(dt, dt.unixtime());
             mqtt_sendstorage(dt, sd_freespace()); 
 
@@ -267,11 +269,12 @@ Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
         if ( mqtt_reconnect() ) {
-            led_modesend();
+            led_modesend(led_elapsedtime);
             mqtt_sendvalue(datum.dt, datum.value, datum.id); 
             led_modenormal();
         } else {
-            logthing(MQTT_SENSOR);
+            led_elapsedtime = led_modeerror();
+//            logthing(MQTT_SENSOR);
             sd_writedatum(&datum);
         }
     }
