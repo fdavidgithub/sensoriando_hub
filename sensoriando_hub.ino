@@ -12,6 +12,7 @@
  *    Tools>>Board (NodeMCU 1.0)
  *      
  * Libraries (Sketch >> Include Library >> Manage Libraies)  
+ *    Sensoriando       by Francis David      v1.0.0  
  *    RTCLib            by Adafruit           v1.8.0
  *    NTPClient         by Fabrice Weinberg   v3.2.0
  *    PubSubClient      by Nick O' Leary      v2.7.0
