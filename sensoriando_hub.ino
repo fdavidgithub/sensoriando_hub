@@ -53,6 +53,8 @@
 long SystemElapsedTime;
 byte InitializedSd, InitializedEth;
 Nanoshield_RTC rtcclient;
+EthernetClient ethernetclient;
+PubSubClient mqttclient(ethernetclient);
 
 
 /*
@@ -154,7 +156,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
 
     // MQTT
-    if ( !mqtt_init() ) {
+    if ( !mqtt_init(&mqttclient) ) {
         led_modeerror();
         logthing(MQTT_FAIL);
     } else {
@@ -248,12 +250,12 @@ Serial.println(reset_elapsedtime);
         SystemElapsedTime = millis();
         dt = rtc_get(&rtcclient); 
 
-        if ( mqtt_reconnect() ) {
+        if ( mqtt_reconnect(&mqttclient) ) {
             led_modesend(led_elapsedtime);
 
 //            logthing(SYS_SENT);   
-            mqtt_senddatetime(dt, dt.unixtime());
-            mqtt_sendstorage(dt, sd_freespace()); 
+            mqtt_senddatetime(&mqttclient, dt, dt.unixtime());
+            mqtt_sendstorage(&mqttclient, dt, sd_freespace()); 
 
             led_modenormal();
         }
@@ -269,9 +271,9 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        if ( mqtt_reconnect() ) {
+        if ( mqtt_reconnect(&mqttclient) ) {
             led_modesend(led_elapsedtime);
-            mqtt_sendvalue(datum.dt, datum.value, datum.id); 
+            mqtt_sendvalue(&mqttclient, datum.dt, datum.value, datum.id); 
             led_modenormal();
         } else {
             led_elapsedtime = led_modeerror();
@@ -305,7 +307,7 @@ Serial.println(msg);delay(1000);
                                                               msg);      
     }
 
-    mqtt_sendmessage(dt, msg);
+    mqtt_sendmessage(&mqttclient, dt, msg);
     sd_writemsg(logmsg);
 }
 
