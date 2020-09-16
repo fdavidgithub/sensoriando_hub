@@ -17,6 +17,8 @@
 #define DEBOUNCE  500
 #define TIMEOUT   1000
 #define MSTOS     1000 //Milli seconds in seconds
+
+
 /*
  * GlobalVariables
  */
@@ -43,6 +45,7 @@ void OnPaired(uint8_t *, String);
 void OnConnected(uint8_t *, String);
 void CmdInit(SensoriandoWifiCommandInit *);
 void SerialFlush();
+void CmdUpdate(SensoriandoWifiCommandInit *);
 
 
 /*
@@ -109,8 +112,10 @@ Serial.print("ETX: ");Serial.println(cmdinit.etx, HEX);
 Serial.print("Incomme command: 0x");Serial.println(cmdinit.cmd, HEX);
 #endif 
           switch ( cmdinit.cmd ) {
-            case CMD_INIT: CmdInit(&cmdinit);
-                           break;   
+            case CMD_INIT:  CmdInit(&cmdinit);
+                            break;   
+            case CMD_UPD:   CmdUpdate(&cmdinit);
+                            break;
             default: 
 #ifdef DEBUG
 Serial.println("WHATTT???!!!!");
@@ -151,6 +156,23 @@ void SerialFlush()
   while ( Serial.available()  ) {
     Serial.read();    
     delay(1);
+  }
+}
+
+void CmdUpdate(SensoriandoWifiCommandInit *cmdinit)
+{ 
+#ifdef DEBUG
+Serial.println("Command**********");
+Serial.print("STX: ");Serial.println(cmdinit->stx, HEX);
+Serial.print("cmd: ");Serial.println(cmdinit->cmd, HEX);
+Serial.print("dt: ");Serial.println(cmdinit->param, DEC);
+Serial.print("ETX: ");Serial.println(cmdinit->etx, HEX);
+Serial.println();
+#endif
+
+  if ( cmdinit->cmd = CMD_UPD) {
+      DtNow = cmdinit->param;
+      timeelapsed = millis();
   }
 }
 

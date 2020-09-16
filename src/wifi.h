@@ -24,6 +24,7 @@
  * Prototypes
  */
 byte wifi_init(long);
+void wifi_update(long);
 byte wifi_available(SensoriandoSensorDatum *); 
  
 #endif

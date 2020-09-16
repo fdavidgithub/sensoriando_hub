@@ -251,6 +251,8 @@ Serial.println(reset_elapsedtime);
         SystemElapsedTime = millis();
         dt = rtc_get(&rtcclient); 
 
+        wifi_update(dt.unixtime());
+
         if ( mqtt_reconnect(&mqttclient) ) {
             led_modesend(led_elapsedtime);
 

@@ -94,3 +94,26 @@ Serial.println("[INIT] No Sync");
            (cmdresult.stx == STX) && (cmdresult.etx == ETX);
 }
 
+void wifi_update(long epoch) {
+    SensoriandoWifiCommandInit cmdinit;
+
+    cmdinit.stx = STX;
+    cmdinit.cmd = CMD_UPD;
+    cmdinit.param = epoch;
+    cmdinit.etx = ETX;
+
+#ifdef DEBUG_WIFI
+Serial.print("[CMD UPD] Writing (bytes): ");Serial.println(sizeof(cmdinit), DEC);
+Serial.print("STX: 0x");Serial.println(cmdinit.stx, HEX);
+Serial.print("cmd: 0x");Serial.println(cmdinit.cmd, HEX);
+Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
+Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
+Serial.println();
+#endif
+
+    Serial1.write(SYN);
+    delay(1);
+    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+    delay(1);    
+}
+
