@@ -52,6 +52,7 @@
  */
 long SystemElapsedTime;
 byte InitializedSd, InitializedEth;
+Nanoshield_RTC rtcclient;
 
 
 /*
@@ -94,7 +95,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
      * Inits OFFLINE
      */
     //Real Time Counter (RTC)    
-    if ( ! rtc_init() ) {
+    if ( ! rtc_init(&rtcclient) ) {
         led_modeerror();
         logthing(RTC_INITFAIL);
         resetFunc();
@@ -143,12 +144,12 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
      * Inits ONLINE
      */
     // RTC Update  
-    if ( ! rtc_check() ) {
+    if ( ! rtc_check(&rtcclient) ) {
         led_modeerror();
         logthing(RTC_UPDFAIL);
         resetFunc();
     } else {
-        rtc_sync(ntp_get(), dt_rtc);
+        rtc_sync(&rtcclient, ntp_get(), dt_rtc);
         logthing(RTC_UPDPASS);
     }
 
@@ -161,7 +162,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     }
        
     // Wifi    
-    dt_rtc = rtc_get(); 
+    dt_rtc = rtc_get(&rtcclient); 
 
 #ifdef DEBUG
 Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
@@ -245,7 +246,7 @@ Serial.println(reset_elapsedtime);
      */
     if ( (millis() - SystemElapsedTime) >= SYSTEM_UPDATE ) {
         SystemElapsedTime = millis();
-        dt = rtc_get(); 
+        dt = rtc_get(&rtcclient); 
 
         if ( mqtt_reconnect() ) {
             led_modesend(led_elapsedtime);
@@ -294,9 +295,9 @@ void logthing(char *msg)
 Serial.println(msg);delay(1000);
 #endif
 
-    dt = rtc_get();
+    dt = rtc_get(&rtcclient);
     
-    if ( !rtc_check() ) {
+    if ( !rtc_check(&rtcclient) ) {
       sprintf(logmsg, "[           system init           ] %s", msg);
     } else {     
       sprintf(logmsg, "[%02d/%02d/%04d %02d:%02d:%02d UTC] %s", dt.day(), dt.month(), dt.year(), \
@@ -307,3 +308,4 @@ Serial.println(msg);delay(1000);
     mqtt_sendmessage(dt, msg);
     sd_writemsg(logmsg);
 }
+
