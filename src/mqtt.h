@@ -33,7 +33,7 @@ byte mqtt_init(PubSubClient *);
 byte mqtt_reconnect(PubSubClient *);
 void mqtt_sendvalue(PubSubClient *, DateTime, float, int);
 void mqtt_senddatetime(PubSubClient *, DateTime, long);
-void mqtt_sendstorage(PubSubClient *, DateTime, float);
+void mqtt_sendstorage(PubSubClient *, DateTime, long);
 void mqtt_sendmessage(PubSubClient *, DateTime, char *);
 
 #endif

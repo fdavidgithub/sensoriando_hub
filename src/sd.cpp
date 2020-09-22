@@ -143,16 +143,22 @@ Serial.print("DATA size: ");Serial.print(f.size());
 */
 }
 
-
-float sd_freespace()
+long sd_freespace()
 {
-  return 0;//SdFreeSpace;
+    File root;
+  
+    root = SD.open("/");
+
+#ifdef DEBUG_SD
+Serial.print("USEDSpace in Kbytes: ");Serial.println(sd_usedsize(root,0)/1024);       
+#endif
+
+    return sd_fullsize() - sd_usedsize(root, 0)/1024;
 }
 
-float sd_fullsize() 
+long sd_fullsize() 
 {  
     uint32_t volumesize;
-    float space;
 
     #ifdef ARDUINO
         SdVolume SdVolume;
@@ -171,12 +177,36 @@ float sd_fullsize()
     #endif
     
     volumesize /= 2;                              // SD card blocks are always 512 bytes (2 blocks are 1KB)
-    space = volumesize / 1024.0;                   //Megabytes
+//       space = volumesize / 1024.0;                   //Megabytes
 
 #ifdef DEBUG_SD
-Serial.print("Space MB: ");Serial.println(space);
+Serial.print("FULLSpace in Kbytes: ");Serial.println((float)volumesize);
 #endif
 
-    return space;  
+    return (float)volumesize;  
 }
+
+long sd_usedsize(File dir, long bytes)
+{
+    long used=bytes;
+    File entry;
+
+    while (true) {
+        entry =  dir.openNextFile();
+        if (! entry) {
+            dir.rewindDirectory();
+            break;
+        }
+
+        if (entry.isDirectory()) {
+            sd_usedsize(entry, used);
+        }
+
+        used = used + entry.size();
+        entry.close();
+    }
+
+    return used;
+}
+
 

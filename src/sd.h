@@ -35,9 +35,10 @@
 byte sd_init();
 void sd_writemsg(char *);
 void sd_writedatum(SensoriandoSensorDatum *);
-float sd_fullsize();
-float sd_freespace();
 byte sd_readdatum(SensoriandoSensorDatum *);
 void sd_dropdb();
+long sd_usedsize(File, long);
+long sd_fullsize();
+long sd_freespace();
 
 #endif

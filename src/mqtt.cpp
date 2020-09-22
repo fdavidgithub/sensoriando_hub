@@ -61,7 +61,7 @@ void mqtt_senddatetime(PubSubClient *mqttclient, DateTime dt, long value_dt) {
     mqttclient->publish(topic, msg);
 }
 
-void mqtt_sendstorage(PubSubClient *mqttclient, DateTime dt, float value) {
+void mqtt_sendstorage(PubSubClient *mqttclient, DateTime dt, long value) {
     char msg[256], topic[256];
 
     sensoriandoSendStorage(dt, value, msg, topic);
