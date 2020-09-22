@@ -8,12 +8,16 @@ void printDirectory(File dir, int numTabs) {
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
+      dir.rewindDirectory();
       break;
     }
+
     for (uint8_t i = 0; i < numTabs; i++) {
       Serial.print('\t');
     }
+
     Serial.print(entry.name());
+    
     if (entry.isDirectory()) {
       Serial.println("/");
       printDirectory(entry, numTabs + 1);
@@ -24,6 +28,50 @@ void printDirectory(File dir, int numTabs) {
     }
     entry.close();
   }
+}
+
+float used(File dir, float w) 
+{
+  float bytes=w;
+  File entry;
+
+  while (true) {
+    entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      dir.rewindDirectory();
+      break;
+    }
+
+    if (entry.isDirectory()) {
+        used(entry, bytes);
+    }
+
+    bytes = bytes + entry.size();
+    entry.close();
+ }
+
+    return bytes;
+}
+
+float space()
+{
+    uint32_t volumesize;
+    float space;
+
+    SdVolume SdVolume;
+    Sd2Card SdCard;
+
+        SdCard.init(SPI_HALF_SPEED, GPIO_SD);    
+        SdVolume.init(SdCard);
+        
+        volumesize = SdVolume.blocksPerCluster();     // clusters are collections of blocks
+        volumesize *= SdVolume.clusterCount();        // we'll have a lot of clusters
+    
+    volumesize /= 2.0;                              // SD card blocks are always 512 bytes (2 blocks are 1KB)
+    space = volumesize / 1024.0;                    //Mbytes
+
+    return space;  
 }
 
 void setup() {
@@ -65,8 +113,8 @@ void setup() {
       Serial.println("Removing example.txt...");
       SD.remove("example.txt");
   
-      myFile = SD.open("/");
-      printDirectory(myFile, 0); 
+//      myFile = SD.open("/");
+//      printDirectory(myFile, 0); 
     } else {
       Serial.println("example.txt doesn't exist.");
     }  
@@ -80,13 +128,17 @@ void loop() {
   myFile = SD.open("example.txt", FILE_WRITE);
   if (myFile) {
     myFile.println("teste");
-    myFile.close();
   } else {
-    Serial.println("do not open file");
+    Serial.println("[example.txt]do not open file");
   }
-  
+  myFile.close();
+
   delay(1000);
 
   myFile = SD.open("/");
-  printDirectory(myFile, 0); 
+  
+  printDirectory(myFile, 0);  
+  
+  Serial.println(space());
+  Serial.println(used(myFile,0));
 }
