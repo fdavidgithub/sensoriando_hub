@@ -27,7 +27,7 @@ Serial.println("Reading DATA...");
 
     f = SD.open(DATA_DB);
     f.seek(pos);
-Serial.print(">> ");Serial.println(f.available());           
+    
     if ( f.available() ) {
         f.read(buf, sizeof(buf));
         pos = f.position();      

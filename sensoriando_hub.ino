@@ -313,4 +313,3 @@ Serial.println(msg);delay(1000);
     mqtt_sendmessage(&mqttclient, dt, msg);
     sd_writemsg(logmsg);
 }
-
