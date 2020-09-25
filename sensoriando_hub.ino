@@ -1,5 +1,5 @@
 /* 
- * Read sound sensor and publish in MQTT server
+ * Receive reads of sensors and publish in MQTT server
  * 
  * Build with IDE Arduino 1.8.12
  * Addicional Board Manager (File >> Preferences)
