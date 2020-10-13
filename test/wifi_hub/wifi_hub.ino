@@ -45,7 +45,7 @@ void OnConnected(uint8_t *, String);
 void setup() 
 {
   Serial.begin(9600);
-  pinMode(GPIO_PAIR, INPUT);
+  pinMode(2/*GPIO_PAIR*/, INPUT);
   
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(LED_BUILTIN);
@@ -62,7 +62,7 @@ void loop()
 {
   simpleEspConnection.loop();
   
-  if ( digitalRead(GPIO_PAIR) ) {
+  if ( digitalRead(2/*GPIO_PAIR*/) ) {
     Serial.println("Pairing started...");
     delay(1000);
     

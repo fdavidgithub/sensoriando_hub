@@ -7,15 +7,10 @@
 #include <Nanoshield_EEPROM.h>
 
 // The MAC address will be read from the EEPROM on the Ethernet Nanoshield
-//80:1F:12:D0:DD:52 ethernet 1 with ESP
-//80:1F:12:33:6D:C6 ethernet 2
-
-//80:1F:12:D0:DD:52 ethernet 1 with Arduino
-
 byte mac[6];
 
 // Set the static IP address to use if the DHCP fails to assign
-IPAddress ip(10, 0, 0, 112);
+//IPAddress ip(10, 0, 0, 112);
 
 // Inialize EEPROM with MAC address
 Nanoshield_EEPROM eeprom(1, 1, 0, true);
@@ -38,6 +33,7 @@ void setup() {
   // Read the MAC address from the Ethernet Nanoshield EEPROM and show it on the terminal
   eeprom.begin();
   eeprom.startReading(0x00FA);
+
   Serial.println();
   Serial.print("MAC address: ");
   
