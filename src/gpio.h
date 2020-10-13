@@ -5,6 +5,7 @@
 #define GPIO_H
 
 //#define GPIO_RESET   D0   
+#define GPIO_PAIR    8
 #define GPIO_RED     A2           
 #define GPIO_GREEN   A1      
 #define GPIO_BLUE    A0      

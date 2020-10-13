@@ -1,12 +1,37 @@
 #include "wifi.h"
 
-byte wifi_available(SensoriandoSensorDatum *datum) {
+void wifi_pair()
+{
+    SensoriandoWifiCommandInit cmdinit = {NULL, NULL, NULL, NULL};
+
+
+    /*
+     * Send command
+     */
+    cmdinit.stx = STX;
+    cmdinit.cmd = CMD_PAIR;
+    cmdinit.etx = ETX;
+
+#ifdef DEBUG_WIFI
+Serial.println("");Serial.print("[Wifi PAIR]");Serial.println((char *)&cmdinit);
+Serial.print("[CMD PAIR] Writing (bytes): ");Serial.println(sizeof(cmdinit), DEC);
+Serial.print("STX: 0x");Serial.println(cmdinit.stx, HEX);
+Serial.print("cmd: 0x");Serial.println(cmdinit.cmd, HEX);
+Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
+#endif
+
+    Serial3.write(SYN);
+    Serial3.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+}
+
+byte wifi_available(SensoriandoSensorDatum *datum)
+{
     byte stream[sizeof(SensoriandoSensorDatum)];
     
-    if ( Serial1.available() ) {
-      if ( Serial1.read() == SYN ) {
+    if ( Serial3.available() ) {
+      if ( Serial3.read() == SYN ) {
         delay(1);
-        Serial1.readBytes(stream, sizeof(stream));
+        Serial3.readBytes(stream, sizeof(stream));
 
 #ifdef DEBUG_WIFI
 Serial.write(stream, sizeof(stream));
@@ -33,44 +58,54 @@ Serial.println("[AVAILABLE] No Sync");
     return (datum->stx == STX) && (datum->etx == ETX);
 }
 
-byte wifi_init(long epoch) {
+byte wifi_init(long epoch) 
+{
     SensoriandoWifiCommandInit cmdinit;
     SensoriandoWifiCommandResult cmdresult = {NULL, NULL, NULL, NULL};
     long timeelapsed;
     byte bufstream[sizeof(cmdresult)] = {};
+    byte stream=NULL;
 
-    //Send command
-    Serial1.begin(115200);
+    Serial3.begin(115200);
 
+
+    /*
+     * Send command
+     */
     cmdinit.stx = STX;
     cmdinit.cmd = CMD_INIT;
     cmdinit.param = epoch;
     cmdinit.etx = ETX;
 
 #ifdef DEBUG_WIFI
+Serial.println("");Serial.print("[Wifi INIT]");Serial.println((char *)&cmdinit);
 Serial.print("[CMD INIT] Writing (bytes): ");Serial.println(sizeof(cmdinit), DEC);
 Serial.print("STX: 0x");Serial.println(cmdinit.stx, HEX);
 Serial.print("cmd: 0x");Serial.println(cmdinit.cmd, HEX);
 Serial.print("dt: ");Serial.println(cmdinit.param, DEC);
 Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
-Serial.println();
 #endif
 
-    Serial1.write(SYN);
-    delay(1);
-    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
-    
-    //Waiting anwser
-    timeelapsed = millis();   
+    Serial3.write(SYN);
+    Serial3.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+
+
+    /*
+     * Waiting anwser
+     */
+    timeelapsed = millis();
     while ( (millis() - timeelapsed) < TIMEOUT) {
-      if ( Serial1.available() ) {
-        if ( Serial1.read() == SYN ) {
-          delay(1);
-          Serial1.readBytes(bufstream, sizeof(bufstream));
-          
-          memcpy(&cmdresult, bufstream, sizeof(bufstream));
+#ifdef DEBUG_WIFI
+Serial.print(".");
+#endif
+
+        if ( Serial3.available() ) {
+            switch (stream) {
+                case SYN:   Serial3.readBytes(bufstream, sizeof(bufstream));
+                            memcpy(&cmdresult, bufstream, sizeof(bufstream));
 
 #ifdef DEBUG_WIFI
+Serial.println(">> Anwser");
 Serial.print("STX: 0x");Serial.println(cmdresult.stx, HEX);
 Serial.print("cmd: 0x");Serial.println(cmdresult.cmd, HEX);
 Serial.print("result: 0x");Serial.println(cmdresult.res, HEX);
@@ -78,15 +113,15 @@ Serial.print("ETX: 0x");Serial.println(cmdresult.etx, HEX);
 Serial.println();
 #endif
 
-          break;
-        } else {
-#ifdef DEBUG
-Serial.println("[INIT] No Sync");
-#endif                  
-        }
-      }
+                            break;
+                default:    stream = Serial3.read();
+                            break;
+            }
 
-      delay(1);
+            if (cmdresult.res == ACK) {
+                break;
+            }
+        }
     }
 
     //Valid   
@@ -111,9 +146,9 @@ Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
 Serial.println();
 #endif
 
-    Serial1.write(SYN);
+    Serial3.write(SYN);
     delay(1);
-    Serial1.write((uint8_t *)&cmdinit, sizeof(cmdinit));
+    Serial3.write((uint8_t *)&cmdinit, sizeof(cmdinit));
     delay(1);    
 }
 

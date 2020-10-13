@@ -15,16 +15,12 @@
 
 #define TIMEOUT 5000
 
-/* 
- * GlobalVariables
- */
-
-
 /*
  * Prototypes
  */
 byte wifi_init(long);
 void wifi_update(long);
 byte wifi_available(SensoriandoSensorDatum *); 
- 
+void wifi_pair();
+
 #endif

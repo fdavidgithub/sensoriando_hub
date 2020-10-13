@@ -46,6 +46,7 @@
 
 #define THING_RESET     5000
 #define THING_DEBOUNCE  1000
+#define DEBOUNCE        500
 
 
 /* 
@@ -82,8 +83,13 @@ void setup()
     /*
      * GPIO Setting
      */
+    pinMode(GPIO_PAIR, INPUT);
+#ifdef DEBUG
+Serial.print("GPIO PAIR ");Serial.println(GPIO_PAIR);
+#endif
+    
     #ifdef GPIO_RESET
-      pinMode(GPIO_RESET, INPUT);
+        pinMode(GPIO_RESET, INPUT);
 
 #ifdef DEBUG
 Serial.printf("GPIO RESET %d\n", GPIO_RESET);
@@ -122,15 +128,6 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     if ( ! InitializedEth ){
         led_modeerror();
         logthing(ETHERNET_DONOTCONFIG);
-/*
-        if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-            logthing(ETHERNET_NOTFOUND);
-        } else if (Ethernet.linkStatus() == LinkOFF) {
-            logthing(ETHERNET_CABLENOTCONNECT);
-        }
-      
-        resetFunc();
-*/
     } else {
         logthing(ETHERNET_PASS);        
     }
@@ -223,6 +220,15 @@ Serial.println(reset_elapsedtime);
 
 
     /*
+     * Pairing
+     */
+    if ( digitalRead(GPIO_PAIR) ) {
+        wifi_pair();
+        delay(DEBOUNCE);       
+    }
+
+    
+    /*
      * Check critical devices
      */
     if ( ! InitializedSd ) {
@@ -303,9 +309,9 @@ Serial.println(msg);delay(1000);
     dt = rtc_get(&rtcclient);
     
     if ( !rtc_check(&rtcclient) ) {
-      sprintf(logmsg, "[           system init           ] %s", msg);
+        sprintf(logmsg, "[           system init           ] %s", msg);
     } else {     
-      sprintf(logmsg, "[%02d/%02d/%04d %02d:%02d:%02d UTC] %s", dt.day(), dt.month(), dt.year(), \
+        sprintf(logmsg, "[%02d/%02d/%04d %02d:%02d:%02d UTC] %s", dt.day(), dt.month(), dt.year(), \
                                                               dt.hour(), dt.minute(), dt.second(), \
                                                               msg);      
     }
