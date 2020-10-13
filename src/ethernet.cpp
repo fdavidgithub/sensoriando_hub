@@ -20,6 +20,12 @@ Serial.println();Serial.print("MAC address: ");
 for (i = 0; i < 5; i++) {
   Serial.print(mac[i], HEX);Serial.print(":");
 }
+
+if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+Serial.println("Ethernet not found");
+} else if (Ethernet.linkStatus() == LinkOFF) {
+Serial.println("Cable not connected");
+}
 #endif
 
     res = Ethernet.begin(mac);
