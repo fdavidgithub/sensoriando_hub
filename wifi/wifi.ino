@@ -86,6 +86,12 @@ void loop()
   }
 
   if ( Serial.available() ) {
+#ifdef DEBUG
+    if ( Serial.read() == 0x42 /*B*/) {
+        CmdPair();
+    }
+#endif
+
     digitalWrite(GPIO_LED, 0);
     elapsedtime_serial = millis();
     stream = Serial.read();
@@ -216,6 +222,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   Serial.print("From client: "); Serial.println(simpleEspConnection.macToStr(ad));
   Serial.print("Bytes received: "); Serial.println(len, DEC);
   Serial.print("STX: "); Serial.println(myData.stx, HEX);
+  Serial.print("UUID: "); Serial.println(myData.uuid);
   Serial.print("id: "); Serial.println(myData.id, DEC);
   Serial.print("value: "); Serial.println(myData.value, DEC);
   Serial.print("dt: "); Serial.println(myData.dt, DEC);

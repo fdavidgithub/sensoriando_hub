@@ -20,21 +20,20 @@
 //#define DEBUG_MQTT
 
 #define MQTT_SERVER "broker.sensoriando.com.br"
-#define MQTT_UUID   "27c36465-7356-4fe7-b726-cf619a9a22f0"
 #define MQTT_PORT   1883
 #define MQTT_USER   "fdavid"
 #define MQTT_PASSWD "12345678"
-
+#define MQTT_LEN    256
 
 /*
  * Prototypes
  */
 byte mqtt_init(PubSubClient *);
 byte mqtt_reconnect(PubSubClient *);
-void mqtt_sendvalue(PubSubClient *, DateTime, float, int);
-void mqtt_senddatetime(PubSubClient *, DateTime, long);
-void mqtt_sendstorage(PubSubClient *, DateTime, long);
-void mqtt_sendmessage(PubSubClient *, DateTime, char *);
+void mqtt_sendvalue(PubSubClient *, SensoriandoParser *);
+void mqtt_senddatetime(PubSubClient *, SensoriandoParser *);
+void mqtt_sendstorage(PubSubClient *, SensoriandoParser *);
+void mqtt_sendmessage(PubSubClient *, SensoriandoParser *);
 
 #endif
 

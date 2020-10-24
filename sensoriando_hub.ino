@@ -48,6 +48,12 @@
 #define THING_DEBOUNCE  1000
 #define DEBOUNCE        500
 
+//Unique for each hardware
+#define HUB_UUID        "83924a87-e7f6-4c75-95d7-dc9a8632ef45"  //uuid for hardware on Sensoriando
+#define TIME_ID         1                                       //id for time rtc on Sensoriando
+#define STORAGE_ID      2                                       //id for storage on Sensoriando
+#define MESSAGE_ID      3                                       //id for message on Sensoriando
+
 
 /* 
  * GlobalVariables
@@ -188,7 +194,8 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
  
 void loop()
 {   
-    SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL, NULL};
+    SensoriandoSensorDatum datum = {NULL, NULL, NULL, NULL, NULL, NULL};
+    SensoriandoParser sensoring;
     DateTime dt;
     long reset_elapsedtime;
     static long led_elapsedtime = millis();
@@ -262,9 +269,17 @@ Serial.println(reset_elapsedtime);
         if ( mqtt_reconnect(&mqttclient) ) {
             led_modesend(led_elapsedtime);
 
-//            logthing(SYS_SENT);   
-            mqtt_senddatetime(&mqttclient, dt, dt.unixtime());
-            mqtt_sendstorage(&mqttclient, dt, sd_freespace()); 
+//            logthing(SYS_SENT);
+            strcpy(sensoring.uuid, HUB_UUID);
+            sensoring.id = TIME_ID;
+            sensoring.dt = dt.unixtime();
+            mqtt_senddatetime(&mqttclient, &sensoring);
+
+            strcpy(sensoring.uuid, HUB_UUID);
+            sensoring.id = STORAGE_ID;
+            sensoring.dt = dt.unixtime();
+            sensoring.value = sd_freespace();
+            mqtt_sendstorage(&mqttclient, &sensoring); 
 
             led_modenormal();
         }
@@ -274,6 +289,7 @@ Serial.println(reset_elapsedtime);
 #ifdef DEBUG
 Serial.print("[Send MQTT] Bytes received: ");Serial.println(sizeof(datum), DEC);
 Serial.print("STX: ");Serial.println(datum.stx, HEX);
+Serial.print("UUID: ");Serial.println(datum.uuid);
 Serial.print("id: ");Serial.println(datum.id, DEC);
 Serial.print("value: ");Serial.println(datum.value, DEC);
 Serial.print("dt: ");Serial.println(datum.dt, DEC);
@@ -282,7 +298,13 @@ Serial.println();
 #endif          
         if ( mqtt_reconnect(&mqttclient) ) {
             led_modesend(led_elapsedtime);
-            mqtt_sendvalue(&mqttclient, datum.dt, datum.value, datum.id); 
+
+            strcpy(sensoring.uuid, datum.uuid);
+            sensoring.id = datum.id;
+            sensoring.dt = datum.dt;
+            sensoring.value = datum.value;
+            mqtt_sendvalue(&mqttclient, &sensoring); 
+            
             led_modenormal();
         } else {
             led_elapsedtime = led_modeerror();
@@ -299,6 +321,7 @@ Serial.println();
  */
 void logthing(char *msg)
 {
+    SensoriandoParser sensoring;
     char logmsg[256];
     DateTime dt;
     
@@ -316,6 +339,11 @@ Serial.println(msg);delay(1000);
                                                               msg);      
     }
 
-    mqtt_sendmessage(&mqttclient, dt, msg);
+    strcpy(sensoring.uuid, HUB_UUID);
+    sensoring.id = MESSAGE_ID;
+    sensoring.dt = dt.unixtime();
+    strcpy(sensoring.msg, msg);
+    mqtt_sendmessage(&mqttclient, &sensoring);
+
     sd_writemsg(logmsg);
 }

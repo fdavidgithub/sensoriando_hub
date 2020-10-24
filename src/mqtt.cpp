@@ -32,66 +32,40 @@ byte mqtt_reconnect(PubSubClient *mqttclient)
 }
 
 
-void mqtt_sendvalue(PubSubClient *mqttclient, DateTime dt, float value_sensor, int id_sensor) {
-    char msg[256], topic[256];
-    
-    sensoriandoSendValue(dt, value_sensor, id_sensor, msg, topic);
-/*
-    sprintf(msg, "{\"dt\":\"%04d%02d%02d%02d%02d%02d\", \"value\":%f}", \
-                    dt.year(), dt.month(), dt.day(), \
-                    dt.hour(), dt.minute(), dt.second(), \
-                    value_sensor);   
-    sprintf(topic, "%s/%d", MQTT_UUID, id_sensor);
-*/    
-    mqttclient->publish(topic, msg);
-    
-}
-
-void mqtt_senddatetime(PubSubClient *mqttclient, DateTime dt, long value_dt) {
-    char msg[256], topic[256];
-
-    sensoriandoSendDatetime(dt, value_dt, msg, topic);
-/*    
-    sprintf(msg, "{\"dt\":\"%04d%02d%02d%02d%02d%02d\", \"value\":%d}", \
-                  dt.year(), dt.month(), dt.day(), \
-                  dt.hour(), dt.minute(), dt.second(), \
-                  value_dt);   
-    sprintf(topic, "%s/%d", MQTT_UUID, TIME_ID);
-*/
-    mqttclient->publish(topic, msg);
-}
-
-void mqtt_sendstorage(PubSubClient *mqttclient, DateTime dt, long value) {
-    char msg[256], topic[256];
-
-    sensoriandoSendStorage(dt, value, msg, topic);
-/*    
-    sprintf(msg, "{\"dt\":\"%04d%02d%02d%02d%02d%02d\", \"value\":%d}", \
-                  dt.year(), dt.month(), dt.day(), \
-                  dt.hour(), dt.minute(), dt.second(), \
-                  value_dt);   
-    sprintf(topic, "%s/%d", MQTT_UUID, TIME_ID);
-*/
-    mqttclient->publish(topic, msg);
-}
-
-void mqtt_sendmessage(PubSubClient *mqttclient, DateTime dt, char *msg) 
+void mqtt_sendvalue(PubSubClient *mqttclient, SensoriandoParser *sensoring) 
 {
-    char topic_msg[256], topic[256];
+    char payload[MQTT_LEN], topic[MQTT_LEN];
 
-    sensoriandoSendMessage(dt, msg, topic_msg, topic);
-/*    
-    sprintf(topic_msg, "{\"dt\":\"%04d%02d%02d%02d%02d%02d\", \"value\":\"%s\"}", \
-                    dt.year(), dt.month(), dt.day(), \
-                    dt.hour(), dt.minute(), dt.second(), \
-                    msg);   
-    sprintf(topic, "%s/%d", MQTT_UUID, MESSAGE_ID);
-*/
-#ifdef DEBUG_MQTT
-Serial.print("json: ");Serial.println(topic_msg);
-#endif
+    sensoriandoSendValue(sensoring, payload, topic);
+   
+    mqttclient->publish(topic, payload);    
+}
 
-    mqttclient->publish(topic, topic_msg);
+void mqtt_senddatetime(PubSubClient *mqttclient, SensoriandoParser *sensoring) 
+{
+    char payload[MQTT_LEN], topic[MQTT_LEN];
+
+    sensoriandoSendDatetime(sensoring, payload, topic);
+    
+    mqttclient->publish(topic, payload);
+}
+
+void mqtt_sendstorage(PubSubClient *mqttclient, SensoriandoParser *sensoring) 
+{
+    char payload[MQTT_LEN], topic[MQTT_LEN];
+
+    sensoriandoSendStorage(sensoring, payload, topic);
+
+    mqttclient->publish(topic, payload);
+}
+
+void mqtt_sendmessage(PubSubClient *mqttclient, SensoriandoParser *sensoring) 
+{
+    char payload[MQTT_LEN], topic[MQTT_LEN];
+
+    sensoriandoSendMessage(sensoring, payload, topic);
+
+    mqttclient->publish(topic, payload);
 }
 
 
