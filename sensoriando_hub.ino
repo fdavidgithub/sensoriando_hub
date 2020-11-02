@@ -27,7 +27,7 @@
 #include "src/rtc.h"
 #include "src/ntp.h"
 #include "src/mqtt.h"
-#include "src/led.h"
+#include "src/interface.h"
 #include "src/ethernet.h"
 #include "src/wifi.h"
 
@@ -41,7 +41,7 @@
     #define SYSTEM_UPDATE   3600000     //Send data system to broker (in miliseconds)
                                         //1 h = 60 min = 3600 s = 3600000 ms
 #else
-    #define SYSTEM_UPDATE   1000
+    #define SYSTEM_UPDATE   10000
 #endif
 
 #define THING_RESET     5000
@@ -85,15 +85,14 @@ void setup()
         Serial.println("Setting...");
     #endif
 
+#ifdef DEBUG
+Serial.print("Data struct (bytes): ");Serial.println(sizeof(SensoriandoSensorDatum));
+Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCommandInit));
+#endif
 
     /*
      * GPIO Setting
-     */
-    pinMode(GPIO_PAIR, INPUT);
-#ifdef DEBUG
-Serial.print("GPIO PAIR ");Serial.println(GPIO_PAIR);
-#endif
-    
+     */  
     #ifdef GPIO_RESET
         pinMode(GPIO_RESET, INPUT);
 
@@ -102,8 +101,8 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 #endif
     #endif
 
-    led_init();    
-    led_modeconfig();
+    interface_init();    
+    interface_modeconfig();
 
 
     /* 
@@ -111,7 +110,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
      */
     //Real Time Counter (RTC)    
     if ( ! rtc_init(&rtcclient) ) {
-        led_modeerror();
+        interface_modeerror();
         logthing(RTC_INITFAIL);
         resetFunc();
     } else {
@@ -122,7 +121,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     InitializedSd = sd_init();
 
     if ( ! InitializedSd ){
-        led_modeerror();
+        interface_modeerror();
         logthing(SD_INITFAIL);
     } else {
         logthing(SD_INITPASS); 
@@ -132,7 +131,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     InitializedEth = ethernet_init();
 
     if ( ! InitializedEth ){
-        led_modeerror();
+        interface_modeerror();
         logthing(ETHERNET_DONOTCONFIG);
     } else {
         logthing(ETHERNET_PASS);        
@@ -140,9 +139,11 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 
     // Valid Erros
     if ( (! InitializedSd) && (! InitializedEth) ) {
-        led_modeerror();
+        interface_modeerror();
         logthing(SYS_REBOOT);
         resetFunc();
+    } else {
+      interface_modeconfig();
     }
 
 
@@ -151,7 +152,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
      */
     // RTC Update  
     if ( ! rtc_check(&rtcclient) ) {
-        led_modeerror();
+        interface_modeerror();
         logthing(RTC_UPDFAIL);
         resetFunc();
     } else {
@@ -161,7 +162,7 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 
     // MQTT
     if ( !mqtt_init(&mqttclient) ) {
-        led_modeerror();
+        interface_modeerror();
         logthing(MQTT_FAIL);
     } else {
         logthing(MQTT_PASS);      
@@ -175,18 +176,18 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
 #endif
     
     if ( !wifi_init(dt_rtc.unixtime()) ) {
-        led_modeerror();
+        interface_modeerror();
         logthing(WIFI_FAIL);
         resetFunc();
     } else {
         logthing(WIFI_PASS);
     }
- 
+
 
     /*
      * Done
      */
-    led_modenormal();
+    interface_modenormal();
     logthing(WAIT_READ);
     
     SystemElapsedTime = millis();    
@@ -198,7 +199,7 @@ void loop()
     SensoriandoParser sensoring;
     DateTime dt;
     long reset_elapsedtime;
-    static long led_elapsedtime = millis();
+    static long interface_elapsedtime = millis();
 
 
     /*
@@ -206,7 +207,7 @@ void loop()
      */
     #ifdef GPIO_RESET
     if ( digitalRead(GPIO_RESET) ) {
-        led_elapsedtime = led_modeerror();
+        interface_elapsedtime = interface_modeerror();
         reset_elapsedtime=millis();
         
         while ( ((millis() - reset_elapsedtime) < THING_RESET) && digitalRead(GPIO_RESET) ) {
@@ -220,7 +221,7 @@ Serial.println(reset_elapsedtime);
             delay(THING_DEBOUNCE);
             resetFunc();
         } else {
-            led_modenormal();
+            interface_modenormal();
         }
     }
     #endif
@@ -229,7 +230,7 @@ Serial.println(reset_elapsedtime);
     /*
      * Pairing
      */
-    if ( digitalRead(GPIO_PAIR) ) {
+    if ( interface_pair() ) {
         wifi_pair();
         delay(DEBOUNCE);       
     }
@@ -240,7 +241,7 @@ Serial.println(reset_elapsedtime);
      */
     if ( ! InitializedSd ) {
         if ( ! sd_init() ) {
-            led_elapsedtime = led_modeerror();
+            interface_elapsedtime = interface_modeerror();
             logthing(SD_INITFAIL);
         } else {
             InitializedSd = 1;
@@ -249,7 +250,7 @@ Serial.println(reset_elapsedtime);
 
     if ( ! InitializedEth ) {
         if ( ! ethernet_init() ) {
-            led_elapsedtime = led_modeerror();
+            interface_elapsedtime = interface_modeerror();
             logthing(ETHERNET_DONOTCONFIG);
         } else {
             InitializedEth = 1;
@@ -267,7 +268,7 @@ Serial.println(reset_elapsedtime);
         wifi_update(dt.unixtime());
 
         if ( mqtt_reconnect(&mqttclient) ) {
-            led_modesend(led_elapsedtime);
+            interface_modesend(interface_elapsedtime);
 
 //            logthing(SYS_SENT);
             strcpy(sensoring.uuid, HUB_UUID);
@@ -281,7 +282,7 @@ Serial.println(reset_elapsedtime);
             sensoring.value = sd_freespace();
             mqtt_sendstorage(&mqttclient, &sensoring); 
 
-            led_modenormal();
+            interface_modenormal();
         }
     }
 
@@ -297,7 +298,7 @@ Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
         if ( mqtt_reconnect(&mqttclient) ) {
-            led_modesend(led_elapsedtime);
+            interface_modesend(interface_elapsedtime);
 
             strcpy(sensoring.uuid, datum.uuid);
             sensoring.id = datum.id;
@@ -305,9 +306,9 @@ Serial.println();
             sensoring.value = datum.value;
             mqtt_sendvalue(&mqttclient, &sensoring); 
             
-            led_modenormal();
+            interface_modenormal();
         } else {
-            led_elapsedtime = led_modeerror();
+            interface_elapsedtime = interface_modeerror();
 //            logthing(MQTT_SENSOR);
             sd_writedatum(&datum);
         }

@@ -1,8 +1,8 @@
 /*
  * 
  */
-#ifndef LED_H
-#define LED_H
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
 #ifndef GPIO_H
   #include "gpio.h"
@@ -14,7 +14,7 @@
 /*
  * MACROS
  */
-//#define DEBUG_LED
+//#define DEBUG_INTERFACE
 
 #define MODESEND_UPDATE 300000  //Blink mode send in miliseconds
                                 //5 min = 300 s = 300000 ms
@@ -23,10 +23,11 @@
 /*    
  * Prototypes
  */
-long led_modeerror();
-long led_modeconfig();
-void led_modenormal();
-void led_modesend(long);
-void led_init();
+long interface_modeerror();
+long interface_modeconfig();
+void interface_modenormal();
+void interface_modesend(long);
+void interface_init();
+byte interface_pair();
 
 #endif

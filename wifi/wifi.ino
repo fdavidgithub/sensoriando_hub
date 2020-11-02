@@ -56,8 +56,10 @@ void setup()
   simpleEspConnection.onConnected(&OnConnected);
 
 #ifdef DEBUG
-  Serial.println();
-  Serial.print("[Server] MAC ADDRESS: "); Serial.println(WiFi.macAddress());
+Serial.println();
+Serial.print("[Server] MAC ADDRESS: "); Serial.println(WiFi.macAddress());
+Serial.print("Data struct (bytes): ");Serial.println(sizeof(SensoriandoSensorDatum));
+Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCommandInit));
 #endif
 
   timeelapsed = millis();
@@ -86,12 +88,6 @@ void loop()
   }
 
   if ( Serial.available() ) {
-#ifdef DEBUG
-    if ( Serial.read() == 0x42 /*B*/) {
-        CmdPair();
-    }
-#endif
-
     digitalWrite(GPIO_LED, 0);
     elapsedtime_serial = millis();
     stream = Serial.read();
