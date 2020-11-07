@@ -60,7 +60,6 @@ byte InitializedSd, InitializedEth;
 Nanoshield_RTC rtcclient;
 EthernetClient ethernetclient;
 SensoriandoObj sensoriando(ethernetclient);
-PubSubClient mqttclient(ethernetclient);
 
 enum LogMode{LM_Info, LM_Warning, LM_Error};
 
