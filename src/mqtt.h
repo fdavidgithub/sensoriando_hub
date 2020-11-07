@@ -5,13 +5,8 @@
 #define MQTT_H
 
 #include <Arduino.h>
-#include <RTClib.h>
 #include <PubSubClient.h>
 #include <sensoriando.h>
-
-#ifndef ETHERNET_H
-  #include "ethernet.h"
-#endif
 
 
 /*
