@@ -7,10 +7,11 @@
 #define WAIT_READ           "Waiting..."
 #define SYS_REBOOT          "Critical error: rebooting"
 #define SYS_SENT            "Data system sent to broker"
- 
-#define WIFI_RESET          "Wifi setting reseted"
+#define SYS_PAIR            "Pairing started"
+
 #define WIFI_FAIL           "Wifi fail: reboot!"
 #define WIFI_PASS           "Wifi init, OK!"
+#define WIFI_UPD            "Wifi updated with date and time"
 
 #define RTC_INITFAIL        "RTC fail: reboot!"
 #define RTC_INITPASS        "RTC init, OK!"
@@ -22,6 +23,7 @@
 #define MQTT_PASS           "MQTT init, OK!"
 #define MQTT_FAIL           "MQTT passed!"
 #define MQTT_SENSOR         "[Data Sensor] Broker don't connected: Writing SD!"
+#define MQTT_CONN           "[System] Broker do not connected"
 
 #define SD_INITFAIL             "SD fail: reboot!"
 #define SD_INITPASS             "SD init, OK!"

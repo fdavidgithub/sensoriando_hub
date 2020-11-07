@@ -112,7 +112,11 @@ Serial.println("Writing MESSAGE log...");
        
     f = SD.open(MESSAGE_LOG, FILE_WRITE);
     f.println(msg);
-    f.close();     
+    f.close();
+
+#ifdef DEBUG_SD
+Serial.println("Writed");
+#endif
 }
 
 void sd_writedatum(SensoriandoSensorDatum *datum) 

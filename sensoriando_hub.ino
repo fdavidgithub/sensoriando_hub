@@ -41,11 +41,9 @@
     #define SYSTEM_UPDATE   3600000     //Send data system to broker (in miliseconds)
                                         //1 h = 60 min = 3600 s = 3600000 ms
 #else
-    #define SYSTEM_UPDATE   10000
+    #define SYSTEM_UPDATE   1000
 #endif
 
-#define THING_RESET     5000
-#define THING_DEBOUNCE  1000
 #define DEBOUNCE        500
 
 //Unique for each hardware
@@ -64,12 +62,14 @@ Nanoshield_RTC rtcclient;
 EthernetClient ethernetclient;
 PubSubClient mqttclient(ethernetclient);
 
+enum LogMode{LM_Info, LM_Warning, LM_Error};
+
 
 /*
  * prototypes
  */
 void(* resetFunc) (void) = 0; //declare reset function @ address 0      
-void logthing(char *);
+void logthing(char *, int);
 
           
 /*
@@ -77,7 +77,6 @@ void logthing(char *);
  */
 void setup()
 {
-    char logmsg[256];
     DateTime dt_rtc;
 
     #ifdef DEBUG
@@ -90,31 +89,25 @@ Serial.print("Data struct (bytes): ");Serial.println(sizeof(SensoriandoSensorDat
 Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCommandInit));
 #endif
 
+
     /*
      * GPIO Setting
      */  
-    #ifdef GPIO_RESET
-        pinMode(GPIO_RESET, INPUT);
-
-#ifdef DEBUG
-Serial.printf("GPIO RESET %d\n", GPIO_RESET);
-#endif
-    #endif
-
     interface_init();    
     interface_modeconfig();
 
 
     /* 
-     * Inits OFFLINE
+     * Inits assets OFFLINE
      */
+    
     //Real Time Counter (RTC)    
     if ( ! rtc_init(&rtcclient) ) {
         interface_modeerror();
-        logthing(RTC_INITFAIL);
+        logthing(RTC_INITFAIL, LM_Error);
         resetFunc();
     } else {
-        logthing(RTC_INITPASS);       
+        logthing(RTC_INITPASS, LM_Info);       
     }
 
     //microSD
@@ -122,9 +115,9 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 
     if ( ! InitializedSd ){
         interface_modeerror();
-        logthing(SD_INITFAIL);
+        logthing(SD_INITFAIL, LM_Warning);
     } else {
-        logthing(SD_INITPASS); 
+        logthing(SD_INITPASS, LM_Info); 
     }
     
     //Ethernet
@@ -132,15 +125,15 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
 
     if ( ! InitializedEth ){
         interface_modeerror();
-        logthing(ETHERNET_DONOTCONFIG);
+        logthing(ETHERNET_DONOTCONFIG, LM_Warning);
     } else {
-        logthing(ETHERNET_PASS);        
+        logthing(ETHERNET_PASS, LM_Info);        
     }
 
     // Valid Erros
     if ( (! InitializedSd) && (! InitializedEth) ) {
         interface_modeerror();
-        logthing(SYS_REBOOT);
+        logthing(SYS_REBOOT, LM_Error);
         resetFunc();
     } else {
       interface_modeconfig();
@@ -153,19 +146,19 @@ Serial.printf("GPIO RESET %d\n", GPIO_RESET);
     // RTC Update  
     if ( ! rtc_check(&rtcclient) ) {
         interface_modeerror();
-        logthing(RTC_UPDFAIL);
+        logthing(RTC_UPDFAIL, LM_Error);
         resetFunc();
     } else {
         rtc_sync(&rtcclient, ntp_get(), dt_rtc);
-        logthing(RTC_UPDPASS);
+        logthing(RTC_UPDPASS, LM_Info);
     }
 
     // MQTT
     if ( !mqtt_init(&mqttclient) ) {
         interface_modeerror();
-        logthing(MQTT_FAIL);
+        logthing(MQTT_FAIL, LM_Warning);
     } else {
-        logthing(MQTT_PASS);      
+        logthing(MQTT_PASS, LM_Info);      
     }
        
     // Wifi    
@@ -177,10 +170,10 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
     
     if ( !wifi_init(dt_rtc.unixtime()) ) {
         interface_modeerror();
-        logthing(WIFI_FAIL);
+        logthing(WIFI_FAIL, LM_Error);
         resetFunc();
     } else {
-        logthing(WIFI_PASS);
+        logthing(WIFI_PASS, LM_Info);
     }
 
 
@@ -188,7 +181,7 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
      * Done
      */
     interface_modenormal();
-    logthing(WAIT_READ);
+    logthing(WAIT_READ, LM_Info);
     
     SystemElapsedTime = millis();    
 }
@@ -203,34 +196,10 @@ void loop()
 
 
     /*
-     * Check if is necessary reset system
-     */
-    #ifdef GPIO_RESET
-    if ( digitalRead(GPIO_RESET) ) {
-        interface_elapsedtime = interface_modeerror();
-        reset_elapsedtime=millis();
-        
-        while ( ((millis() - reset_elapsedtime) < THING_RESET) && digitalRead(GPIO_RESET) ) {
-#ifdef DEBUG
-Serial.println(reset_elapsedtime);
-#endif
-        }
-
-        if ( (millis()-reset_elapsedtime) >= THING_RESET && digitalRead(GPIO_RESET) ) {
-            logthing(WIFI_RESET);    
-            delay(THING_DEBOUNCE);
-            resetFunc();
-        } else {
-            interface_modenormal();
-        }
-    }
-    #endif
-
-
-    /*
      * Pairing
      */
     if ( interface_pair() ) {
+        logthing(SYS_PAIR, LM_Info);
         wifi_pair();
         delay(DEBOUNCE);       
     }
@@ -242,7 +211,7 @@ Serial.println(reset_elapsedtime);
     if ( ! InitializedSd ) {
         if ( ! sd_init() ) {
             interface_elapsedtime = interface_modeerror();
-            logthing(SD_INITFAIL);
+            logthing(SD_INITFAIL, LM_Warning);
         } else {
             InitializedSd = 1;
         }
@@ -251,7 +220,7 @@ Serial.println(reset_elapsedtime);
     if ( ! InitializedEth ) {
         if ( ! ethernet_init() ) {
             interface_elapsedtime = interface_modeerror();
-            logthing(ETHERNET_DONOTCONFIG);
+            logthing(ETHERNET_DONOTCONFIG, LM_Warning);
         } else {
             InitializedEth = 1;
         }
@@ -266,11 +235,12 @@ Serial.println(reset_elapsedtime);
         dt = rtc_get(&rtcclient); 
 
         wifi_update(dt.unixtime());
-
+        logthing(WIFI_UPD, LM_Info);
+        
         if ( mqtt_reconnect(&mqttclient) ) {
             interface_modesend(interface_elapsedtime);
+            logthing(SYS_SENT, LM_Info);
 
-//            logthing(SYS_SENT);
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = TIME_ID;
             sensoring.dt = dt.unixtime();
@@ -283,6 +253,8 @@ Serial.println(reset_elapsedtime);
             mqtt_sendstorage(&mqttclient, &sensoring); 
 
             interface_modenormal();
+        } else {
+            logthing(MQTT_CONN, LM_Warning);  
         }
     }
 
@@ -308,8 +280,9 @@ Serial.println();
             
             interface_modenormal();
         } else {
+            logthing(MQTT_SENSOR, LM_Warning);  
+
             interface_elapsedtime = interface_modeerror();
-//            logthing(MQTT_SENSOR);
             sd_writedatum(&datum);
         }
     }
@@ -320,16 +293,12 @@ Serial.println();
 /*
  * functions
  */
-void logthing(char *msg)
+void logthing(char *msg, int logmode)
 {
     SensoriandoParser sensoring;
     char logmsg[256];
     DateTime dt;
     
-#ifdef DEBUG
-Serial.println(msg);delay(1000);
-#endif
-
     dt = rtc_get(&rtcclient);
     
     if ( !rtc_check(&rtcclient) ) {
@@ -340,11 +309,24 @@ Serial.println(msg);delay(1000);
                                                               msg);      
     }
 
-    strcpy(sensoring.uuid, HUB_UUID);
-    sensoring.id = MESSAGE_ID;
-    sensoring.dt = dt.unixtime();
-    strcpy(sensoring.msg, msg);
-    mqtt_sendmessage(&mqttclient, &sensoring);
+    if ( logmode == LM_Info ) {
+        #ifdef DEBUG
+            Serial.println(msg);
+        #endif  
+    }
 
-    sd_writemsg(logmsg);
+    if ( InitializedEth && (logmode == LM_Error) ) {
+        if ( mqtt_reconnect(&mqttclient) ) {
+            strcpy(sensoring.uuid, HUB_UUID);
+            sensoring.id = MESSAGE_ID;
+            sensoring.dt = dt.unixtime();
+            strcpy(sensoring.msg, msg);
+    
+            mqtt_sendmessage(&mqttclient, &sensoring);
+        }
+    }
+        
+    if ( InitializedSd && ((logmode == LM_Warning) || (logmode == LM_Error)) ) {
+        sd_writemsg(logmsg);
+    }
 }
