@@ -26,7 +26,6 @@
 #include "src/sd.h"
 #include "src/rtc.h"
 #include "src/ntp.h"
-#include "src/mqtt.h"
 #include "src/interface.h"
 #include "src/ethernet.h"
 #include "src/wifi.h"
@@ -60,6 +59,7 @@ long SystemElapsedTime;
 byte InitializedSd, InitializedEth;
 Nanoshield_RTC rtcclient;
 EthernetClient ethernetclient;
+SensoriandoObj sensoriando(ethernetclient);
 PubSubClient mqttclient(ethernetclient);
 
 enum LogMode{LM_Info, LM_Warning, LM_Error};
@@ -153,14 +153,14 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
         logthing(RTC_UPDPASS, LM_Info);
     }
 
-    // MQTT
-    if ( !mqtt_init(&mqttclient) ) {
+    //Sensoriando
+    if ( !sensoriandoInit(&sensoriando) ) {
         interface_modeerror();
-        logthing(MQTT_FAIL, LM_Warning);
+        logthing(BROKER_FAIL, LM_Warning);
     } else {
-        logthing(MQTT_PASS, LM_Info);      
+        logthing(BROKER_PASS, LM_Info);      
     }
-       
+
     // Wifi    
     dt_rtc = rtc_get(&rtcclient); 
 
@@ -237,24 +237,24 @@ void loop()
         wifi_update(dt.unixtime());
         logthing(WIFI_UPD, LM_Info);
         
-        if ( mqtt_reconnect(&mqttclient) ) {
+        if ( sensoriandoReconnect(&sensoriando) ) {
             interface_modesend(interface_elapsedtime);
             logthing(SYS_SENT, LM_Info);
 
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = TIME_ID;
             sensoring.dt = dt.unixtime();
-            mqtt_senddatetime(&mqttclient, &sensoring);
+            sensoriandoSendDatetime(&sensoriando, &sensoring);
 
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = STORAGE_ID;
             sensoring.dt = dt.unixtime();
             sensoring.value = sd_freespace();
-            mqtt_sendstorage(&mqttclient, &sensoring); 
+            sensoriandoSendStorage(&sensoriando, &sensoring); 
 
             interface_modenormal();
         } else {
-            logthing(MQTT_CONN, LM_Warning);  
+            logthing(BROKER_CONN, LM_Warning);  
         }
     }
 
@@ -269,18 +269,18 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        if ( mqtt_reconnect(&mqttclient) ) {
+        if ( sensoriandoReconnect(&sensoriando) ) {
             interface_modesend(interface_elapsedtime);
 
             strcpy(sensoring.uuid, datum.uuid);
             sensoring.id = datum.id;
             sensoring.dt = datum.dt;
             sensoring.value = datum.value;
-            mqtt_sendvalue(&mqttclient, &sensoring); 
+            sensoriandoSendValue(&sensoriando, &sensoring); 
             
             interface_modenormal();
         } else {
-            logthing(MQTT_SENSOR, LM_Warning);  
+            logthing(BROKER_SENSOR, LM_Warning);  
 
             interface_elapsedtime = interface_modeerror();
             sd_writedatum(&datum);
@@ -316,13 +316,13 @@ void logthing(char *msg, int logmode)
     }
 
     if ( InitializedEth && (logmode == LM_Error) ) {
-        if ( mqtt_reconnect(&mqttclient) ) {
+        if ( sensoriandoReconnect(&sensoriando) ) {
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = MESSAGE_ID;
             sensoring.dt = dt.unixtime();
             strcpy(sensoring.msg, msg);
     
-            mqtt_sendmessage(&mqttclient, &sensoring);
+            sensoriandoSendMessage(&sensoriando, &sensoring);
         }
     }
         

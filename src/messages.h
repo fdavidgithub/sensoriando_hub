@@ -19,11 +19,11 @@
 #define RTC_UPDPASS         "Update RTC via NTP, OK!"
 #define RTC_NOW             "Unix time: %s"
 
-#define MQTT_CRC            "CRC do not match"
-#define MQTT_PASS           "MQTT init, OK!"
-#define MQTT_FAIL           "MQTT passed!"
-#define MQTT_SENSOR         "[Data Sensor] Broker don't connected: Writing SD!"
-#define MQTT_CONN           "[System] Broker do not connected"
+#define BROKER_CRC            "CRC do not match"
+#define BROKER_PASS           "Broker init, OK!"
+#define BROKER_FAIL           "Broker initt, FAIL!"
+#define BROKER_SENSOR         "[Data Sensor] Broker don't connected: Writing SD!"
+#define BROKER_CONN           "[System] Broker do not connected"
 
 #define SD_INITFAIL             "SD fail: reboot!"
 #define SD_INITPASS             "SD init, OK!"
