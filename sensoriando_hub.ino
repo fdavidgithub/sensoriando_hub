@@ -46,10 +46,7 @@
 #define DEBOUNCE        500
 
 //Unique for each hardware
-#define HUB_UUID        "83924a87-e7f6-4c75-95d7-dc9a8632ef45"  //uuid for hardware on Sensoriando
-#define TIME_ID         1                                       //id for time rtc on Sensoriando
-#define STORAGE_ID      2                                       //id for storage on Sensoriando
-#define MESSAGE_ID      3                                       //id for message on Sensoriando
+#define UUID        "83924a87-e7f6-4c75-95d7-dc9a8632ef45"  //uuid for hardware on Sensoriando
 
 
 /* 
@@ -244,14 +241,12 @@ void loop()
             interface_modesend(interface_elapsedtime);
             
             logthing(SYS_SEND_TIME, LM_Info);
-            strcpy(sensoring.uuid, HUB_UUID);
-            sensoring.id = TIME_ID;
+            strcpy(sensoring.uuid, UUID);
             sensoring.dt = dt.unixtime();
             sensoriandoSendDatetime(&sensoriando, &sensoring);
 
             logthing(SYS_SEND_STORAGE, LM_Info);
-            strcpy(sensoring.uuid, HUB_UUID);
-            sensoring.id = STORAGE_ID;
+            strcpy(sensoring.uuid, UUID);
             sensoring.dt = dt.unixtime();
             sensoring.value = sd_freespace(SdcardSize);
             sensoriandoSendStorage(&sensoriando, &sensoring); 
@@ -322,8 +317,7 @@ void logthing(char *msg, int logmode)
 
     if ( InitializedEth && (logmode == LM_Error) ) {
         if ( sensoriandoReconnect(&sensoriando, Mac) ) {
-            strcpy(sensoring.uuid, HUB_UUID);
-            sensoring.id = MESSAGE_ID;
+            strcpy(sensoring.uuid, UUID);
             sensoring.dt = dt.unixtime();
             strcpy(sensoring.msg, msg);
     
