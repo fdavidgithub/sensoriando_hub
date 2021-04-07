@@ -27,9 +27,12 @@ Serial.print("ETX: 0x");Serial.println(cmdinit.etx, HEX);
 byte wifi_available(SensoriandoSensorDatum *datum)
 {
     byte stream[sizeof(SensoriandoSensorDatum)];
-    
+    byte startbit;
+
     if ( Serial3.available() ) {
-      if ( Serial3.read() == SYN ) {
+      startbit = Serial3.read();
+
+      if ( startbit == SYN ) {
         delay(1);
         Serial3.readBytes(stream, sizeof(stream));
 
@@ -49,7 +52,7 @@ Serial.print("ETX: 0x");Serial.println(datum->etx, HEX);
 Serial.println();
 #endif
       } else {
-#ifdef DEBUG
+#ifdef DEBUG_WIFI
 Serial.println("[AVAILABLE] No Sync");
 #endif        
       }

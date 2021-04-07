@@ -14,7 +14,7 @@
 /*
  * MACROS
  */
-//#define DEBUG_INTERFACE
+#define DEBUG_INTERFACE
 
 #define MODESEND_UPDATE 300000  //Blink mode send in miliseconds
                                 //5 min = 300 s = 300000 ms

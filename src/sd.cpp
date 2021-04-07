@@ -88,8 +88,6 @@ Serial.println("Don't exists DATUM file");
           f = SD.open(DATA_DB, FILE_WRITE);
           f.close();
       } 
-
-      //SdFreeSpace = sd_fullsize();    
   }
     
   return res;
@@ -147,17 +145,22 @@ Serial.print("DATA size: ");Serial.print(f.size());
 */
 }
 
-long sd_freespace()
+long sd_freespace(long sdsize)
 {
     File root;
-  
+    long used;
+
     root = SD.open("/");
+    used = sd_usedsize(root, 0);
 
 #ifdef DEBUG_SD
-Serial.print("USEDSpace in Kbytes: ");Serial.println(sd_usedsize(root,0)/1024);       
+Serial.print("FULL Space in Kbytes: ");Serial.println(sdsize);
+Serial.print("USED Space in Kbytes: ");Serial.println(used); 
+Serial.print("FREE Space in Kbytes: ");Serial.println(sdsize-used);
 #endif
 
-    return sd_fullsize() - sd_usedsize(root, 0)/1024;
+    root.close();
+    return sdsize-used;
 }
 
 long sd_fullsize() 
@@ -170,8 +173,26 @@ long sd_fullsize()
     #endif   
 
     #ifdef ARDUINO
-        SdCard.init(SPI_HALF_SPEED, GPIO_SD);    
-        SdVolume.init(SdCard);
+        if ( ! SdCard.init(SPI_HALF_SPEED, GPIO_SD) ) {    
+#ifdef DEBUG_SD
+Serial.println("[SD] Card init fail");
+#endif        
+        } else {
+#ifdef DEBUG_SD
+Serial.println("[SD] Card wiring is correct and a card is present.");
+#endif
+        }
+
+        if ( ! SdVolume.init(SdCard) ) {
+#ifdef DEBUG_SD
+Serial.println("[SD] Volume init fail");
+#endif        
+        } else {
+#ifdef DEBUG_SD
+Serial.println("[SD] Volume wiring is correct and a card is present.");
+#endif
+        }
+
         
         volumesize = SdVolume.blocksPerCluster();     // clusters are collections of blocks
         volumesize *= SdVolume.clusterCount();        // we'll have a lot of clusters
@@ -184,33 +205,38 @@ long sd_fullsize()
 //       space = volumesize / 1024.0;                   //Megabytes
 
 #ifdef DEBUG_SD
-Serial.print("FULLSpace in Kbytes: ");Serial.println((float)volumesize);
+Serial.print("FULLSpace in Kbytes: ");Serial.println((long)volumesize);
 #endif
-
-    return (float)volumesize;  
+  
+    return (long)volumesize;  
 }
 
 long sd_usedsize(File dir, long bytes)
 {
-    long used=bytes;
     File entry;
 
     while (true) {
         entry =  dir.openNextFile();
+        
         if (! entry) {
             dir.rewindDirectory();
             break;
-        }
+        } 
+
+#ifdef DEBUG_SD
+if ( entry ) { Serial.println(entry.name()); };
+#endif
 
         if (entry.isDirectory()) {
-            sd_usedsize(entry, used);
+            bytes = sd_usedsize(entry, bytes);
+        } else {
+            bytes = bytes + entry.size();
         }
 
-        used = used + entry.size();
         entry.close();
     }
 
-    return used;
+    return bytes/1024;
 }
 
 

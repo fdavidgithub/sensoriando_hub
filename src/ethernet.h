@@ -20,6 +20,6 @@
 /*
  * Prototypes
  */
-byte ethernet_init();
+byte ethernet_init(uint8_t *);
 
 #endif

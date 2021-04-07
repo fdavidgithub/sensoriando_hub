@@ -1,7 +1,6 @@
 #include "ethernet.h"
 
-byte ethernet_init() {
-    byte mac[6];
+byte ethernet_init(uint8_t *mac) {
     Nanoshield_EEPROM eeprom(1, 1, 0, true);
     byte i;
     byte res;

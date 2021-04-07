@@ -3,7 +3,14 @@
 byte interface_pair() 
 {
     int button = analogRead(GPIO_BUTTONS);
-    return button < 69; //Button SEL
+
+#ifdef DEBUG_INTERFACE
+if (button < 69) {
+Serial.println("[INTERFACE] button pairing pressed");
+}
+#endif
+
+    return button < 69; //Button RIGHT
 }
 
 long interface_modeerror() 

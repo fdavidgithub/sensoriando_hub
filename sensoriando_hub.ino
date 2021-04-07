@@ -62,7 +62,8 @@ EthernetClient ethernetclient;
 SensoriandoObj sensoriando(ethernetclient);
 
 enum LogMode{LM_Info, LM_Warning, LM_Error};
-
+long SdcardSize;
+uint8_t Mac[6];
 
 /*
  * prototypes
@@ -77,7 +78,7 @@ void logthing(char *, int);
 void setup()
 {
     DateTime dt_rtc;
-
+    
     #ifdef DEBUG
         Serial.begin(9600);
         Serial.println("Setting...");
@@ -110,6 +111,7 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
     }
 
     //microSD
+    SdcardSize = sd_fullsize();   
     InitializedSd = sd_init();
 
     if ( ! InitializedSd ){
@@ -117,10 +119,11 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
         logthing(SD_INITFAIL, LM_Warning);
     } else {
         logthing(SD_INITPASS, LM_Info); 
+        
     }
     
     //Ethernet
-    InitializedEth = ethernet_init();
+    InitializedEth = ethernet_init(Mac);
 
     if ( ! InitializedEth ){
         interface_modeerror();
@@ -152,8 +155,8 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
         logthing(RTC_UPDPASS, LM_Info);
     }
 
-    //Sensoriando
-    if ( !sensoriandoInit(&sensoriando) ) {
+    //Sensoriando   
+    if ( !sensoriandoInit(&sensoriando, Mac) ) {
         interface_modeerror();
         logthing(BROKER_FAIL, LM_Warning);
     } else {
@@ -198,9 +201,10 @@ void loop()
      * Pairing
      */
     if ( interface_pair() ) {
+        delay(DEBOUNCE);
+         
         logthing(SYS_PAIR, LM_Info);
-        wifi_pair();
-        delay(DEBOUNCE);       
+        wifi_pair();       
     }
 
     
@@ -217,7 +221,7 @@ void loop()
     }
 
     if ( ! InitializedEth ) {
-        if ( ! ethernet_init() ) {
+        if ( ! ethernet_init(Mac) ) {
             interface_elapsedtime = interface_modeerror();
             logthing(ETHERNET_DONOTCONFIG, LM_Warning);
         } else {
@@ -229,28 +233,30 @@ void loop()
     /*
      * Receive/Send Data
      */
-    if ( (millis() - SystemElapsedTime) >= SYSTEM_UPDATE ) {
+    if ( (millis() - SystemElapsedTime) > SYSTEM_UPDATE ) {
         SystemElapsedTime = millis();
         dt = rtc_get(&rtcclient); 
 
         wifi_update(dt.unixtime());
         logthing(WIFI_UPD, LM_Info);
         
-        if ( sensoriandoReconnect(&sensoriando) ) {
+        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
             interface_modesend(interface_elapsedtime);
-            logthing(SYS_SENT, LM_Info);
-
+            
+            logthing(SYS_SEND_TIME, LM_Info);
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = TIME_ID;
             sensoring.dt = dt.unixtime();
             sensoriandoSendDatetime(&sensoriando, &sensoring);
 
+            logthing(SYS_SEND_STORAGE, LM_Info);
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = STORAGE_ID;
             sensoring.dt = dt.unixtime();
-            sensoring.value = sd_freespace();
+            sensoring.value = sd_freespace(SdcardSize);
             sensoriandoSendStorage(&sensoriando, &sensoring); 
-
+            
+            logthing(SYS_SENT, LM_Info);
             interface_modenormal();
         } else {
             logthing(BROKER_CONN, LM_Warning);  
@@ -268,7 +274,7 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        if ( sensoriandoReconnect(&sensoriando) ) {
+        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
             interface_modesend(interface_elapsedtime);
 
             strcpy(sensoring.uuid, datum.uuid);
@@ -315,7 +321,7 @@ void logthing(char *msg, int logmode)
     }
 
     if ( InitializedEth && (logmode == LM_Error) ) {
-        if ( sensoriandoReconnect(&sensoriando) ) {
+        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
             strcpy(sensoring.uuid, HUB_UUID);
             sensoring.id = MESSAGE_ID;
             sensoring.dt = dt.unixtime();

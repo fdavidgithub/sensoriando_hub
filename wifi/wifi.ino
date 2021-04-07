@@ -56,10 +56,10 @@ void setup()
   simpleEspConnection.onConnected(&OnConnected);
 
 #ifdef DEBUG
-Serial.println();
-Serial.print("[Server] MAC ADDRESS: "); Serial.println(WiFi.macAddress());
-Serial.print("Data struct (bytes): ");Serial.println(sizeof(SensoriandoSensorDatum));
-Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCommandInit));
+  Serial.println();
+  Serial.print("[Server] MAC ADDRESS: "); Serial.println(WiFi.macAddress());
+  Serial.print("Data struct (bytes): "); Serial.println(sizeof(SensoriandoSensorDatum));
+  Serial.print("Comand struct (bytes): "); Serial.println(sizeof(SensoriandoWifiCommandInit));
 #endif
 
   timeelapsed = millis();
@@ -92,12 +92,21 @@ void loop()
     elapsedtime_serial = millis();
     stream = Serial.read();
 
+#ifdef DEBUG
+    stream = SYN;
+#endif
+
     while ( (stream == SYN) && (millis() - elapsedtime_serial) <= TIMEOUT ) {
       if ( Serial.available() ) {
         Serial.readBytes(bufstream, sizeof(bufstream));
         memcpy(&cmdinit, bufstream, sizeof(bufstream));
 
 #ifdef DEBUG
+        cmdinit.stx = STX;
+        cmdinit.cmd = CMD_PAIR;
+        cmdinit.param = NULL;
+        cmdinit.etx = ETX;
+
         Serial.print("[CMD] Reading (bytes): "); Serial.println(sizeof(cmdinit), DEC);
         Serial.print("STX: "); Serial.println(cmdinit.stx, HEX);
         Serial.print("cmd: "); Serial.println(cmdinit.cmd, HEX);

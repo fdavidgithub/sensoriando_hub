@@ -8,6 +8,8 @@
 #define SYS_REBOOT          "Critical error: rebooting"
 #define SYS_SENT            "Data system sent to broker"
 #define SYS_PAIR            "Pairing started"
+#define SYS_SEND_TIME       "Current date time send to broker"
+#define SYS_SEND_STORAGE    "Current free space send to broker"
 
 #define WIFI_FAIL           "Wifi fail: reboot!"
 #define WIFI_PASS           "Wifi init, OK!"

@@ -11,7 +11,7 @@
 /*
  * MACROS
  */
-//#define DEBUG_WIFI
+#define DEBUG_WIFI
 
 #define TIMEOUT 5000
 

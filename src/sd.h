@@ -17,7 +17,7 @@
 /*
  * MACROS
  */
-#define DEBUG_SD
+//#define DEBUG_SD
 
 #define MESSAGE_LOG   "logsys.txt"
 #define DATA_DB       "data.hex"
@@ -39,6 +39,7 @@ byte sd_readdatum(SensoriandoSensorDatum *);
 void sd_dropdb();
 long sd_usedsize(File, long);
 long sd_fullsize();
-long sd_freespace();
+long sd_freespace(long);
+ 
 
 #endif
