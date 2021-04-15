@@ -32,10 +32,11 @@ long timeelapsed;
 /*
    Prototypes
 */
-void OnSendError(uint8_t*);
+//void OnSendError(uint8_t*);
 void OnMessage(uint8_t*, const uint8_t*, size_t);
 void OnPaired(uint8_t *, String);
 void OnConnected(uint8_t *, String);
+
 void CmdInit(SensoriandoWifiCommandInit *);
 void CmdUpdate(SensoriandoWifiCommandInit *);
 void CmdPair();
@@ -50,9 +51,10 @@ void setup()
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(GPIO_LED);
+  
   simpleEspConnection.onMessage(&OnMessage);
   simpleEspConnection.onPaired(&OnPaired);
-  simpleEspConnection.onSendError(&OnSendError);
+//  simpleEspConnection.onSendError(&OnSendError);
   simpleEspConnection.onConnected(&OnConnected);
 
 #ifdef DEBUG
@@ -80,7 +82,7 @@ void loop()
 
 #ifdef DEBUG
     struct tm  ts;
-    char       buf[80];
+    char buf[80];
     ts = *localtime(&DtNow);
     strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
     Serial.print(DtNow); Serial.printf(" | %s\n", buf);
@@ -211,12 +213,12 @@ void CmdInit(SensoriandoWifiCommandInit *cmdinit)
     timeelapsed = millis();
   }
 }
-
+/*
 void OnSendError(uint8_t* ad)
 {
   Serial.println("Sending to '" + simpleEspConnection.macToStr(ad) + "' was not possible!");
 }
-
+*/
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   memcpy(&myData, message, sizeof(myData));

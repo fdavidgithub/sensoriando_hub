@@ -81,7 +81,7 @@ byte wifi_init(long epoch)
     cmdinit.etx = ETX;
 
 #ifdef DEBUG_WIFI
-Serial.println("");Serial.print("[Wifi INIT]");Serial.println((char *)&cmdinit);
+Serial.println("");Serial.print("[DEBUG_WIFI]Init");Serial.println((char *)&cmdinit);
 Serial.print("[CMD INIT] Writing (bytes): ");Serial.println(sizeof(cmdinit), DEC);
 Serial.print("STX: 0x");Serial.println(cmdinit.stx, HEX);
 Serial.print("cmd: 0x");Serial.println(cmdinit.cmd, HEX);

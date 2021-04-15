@@ -77,7 +77,7 @@ void setup()
     DateTime dt_rtc;
     
     #ifdef DEBUG
-        Serial.begin(9600);
+        Serial.begin(115200);
         Serial.println("Setting...");
     #endif
 
@@ -239,14 +239,13 @@ void loop()
         
         if ( sensoriandoReconnect(&sensoriando, Mac) ) {
             interface_modesend(interface_elapsedtime);
+            strcpy(sensoring.uuid, UUID);
             
             logthing(SYS_SEND_TIME, LM_Info);
-            strcpy(sensoring.uuid, UUID);
             sensoring.dt = dt.unixtime();
             sensoriandoSendDatetime(&sensoriando, &sensoring);
 
             logthing(SYS_SEND_STORAGE, LM_Info);
-            strcpy(sensoring.uuid, UUID);
             sensoring.dt = dt.unixtime();
             sensoring.value = sd_freespace(SdcardSize);
             sensoriandoSendStorage(&sensoriando, &sensoring); 

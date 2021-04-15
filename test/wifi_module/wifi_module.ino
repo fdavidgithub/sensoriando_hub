@@ -4,7 +4,9 @@
 */
 #include <sensoriando.h>
 #include <SimpleEspNowConnection.h>
-#include "gpio.h"
+//#include "gpio.h"
+
+#define GPIO_PAIR 0
 
 SimpleEspNowConnection SimpleEspConnection(SimpleEspNowRole::CLIENT);
 SensoriandoSensorDatum myData;
@@ -19,13 +21,11 @@ int Paired=0;
  */
 void espnow_init();
 bool readConfig();
-void OnSendError(uint8_t*);
-void OnPaired(uint8_t *, String);
-bool readConfig();
 bool writeConfig();
-void OnNewGatewayAddress(uint8_t *, String);
 void readSensor();
-void OnMessage(uint8_t*, const uint8_t*, size_t);
+void OnNewGatewayAddress(uint8_t *, String);
+void OnSendError(uint8_t*);
+
 
 void setup()
 {
@@ -39,11 +39,8 @@ void setup()
   }
   
   SimpleEspConnection.begin();
-  SimpleEspConnection.setPairingBlinkPort(2);
-  SimpleEspConnection.onMessage(&OnMessage);
-  SimpleEspConnection.onPaired(&OnPaired);
+  SimpleEspConnection.setPairingBlinkPort(2); 
   SimpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);
-  SimpleEspConnection.onSendError(&OnSendError);
 
   Serial.print("Client Address: ");Serial.println(WiFi.macAddress());
   espnow_init();
@@ -51,9 +48,17 @@ void setup()
 
 void loop()
 {
+  if ( Serial.available() ) {
+    switch ( Serial.read() ) {
+      case 'r': Serial.print("Resetting...");ESP.reset(); break;
+      case 'f': Serial.print("Formating...");SPIFFS.format();Serial.println("DONE");break;
+    }
+  }
+ 
+
   SimpleEspConnection.loop();
 
-  if ( digitalRead(GPIO_PAIR) ) {
+  if ( !digitalRead(GPIO_PAIR) ) {
     Serial.println("Pairing started...");
     delay(1000);
     SimpleEspConnection.startPairing(120);
@@ -86,19 +91,19 @@ void espnow_init()
   if (!readConfig())
   {
     Serial.println("!!! [READ] Server address not save. Please pair first !!!");
-    return;
   } else {
-    Serial.print("Server address saved: ");Serial.println(ServerAddress);
+      Serial.print("Server address saved: ");Serial.println(ServerAddress);
+
+      if (!SimpleEspConnection.setServerMac(ServerAddress)) // set the server address which is stored in EEPROM
+      {
+        Serial.println("!!! [CONNECT] Server address not valid. Please pair again !!!");
+      } else {
+        Serial.print("Connected on Server Address:");Serial.println(ServerAddress);
+        Paired = 1;
+      }  
   }
 
-  if (!SimpleEspConnection.setServerMac(ServerAddress)) // set the server address which is stored in EEPROM
-  {
-    Serial.println("!!! [CONNECT] Server address not valid. Please pair again !!!");
-    return;
-  } else {
-    Serial.print("Server address connected:");Serial.println(ServerAddress);
-    Paired = 1;
-  }
+
 }
 
 void OnSendError(uint8_t* ad)
@@ -107,13 +112,6 @@ void OnSendError(uint8_t* ad)
   CounterError++;
 }
 
-void OnPaired(uint8_t *ga, String ad)
-{
-  Serial.println("EspNowConnection : Server '" + ad + " paired! ");
-  SimpleEspConnection.endPairing();
-
-  espnow_init();
-}
 
 bool readConfig()
 {
@@ -147,14 +145,12 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 {
   ServerAddress = ad;
   SimpleEspConnection.setServerMac(ga);
-  Serial.println("Pairing mode finished...");
-  writeConfig();
-}
 
-void OnConnected(uint8_t *ga, String ad)
-{
-  Serial.println(">> "); Serial.print(ad);
-  Serial.println(">>[SERVER] connected!");
+  Serial.println("Pairing mode finished...");
+  Serial.println("EspNowConnection : Server '" + ad + " paired! ");
+
+  writeConfig();
+  ESP.reset();
 }
 
 void readSensor() 
@@ -168,11 +164,4 @@ void readSensor()
   Serial.print("Bytes sent: ");Serial.println(sizeof(myData));
   Serial.printf("stx=0x%02X, id=%d, value=%02f, etx=0x%02X\n", myData.stx, myData.id, myData.value, myData.etx);
 }
-
-void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
-{
-  Serial.print("Anything arrive from ");Serial.println((char *)ad);
-  Serial.println((char *)message);
-}
-
  
