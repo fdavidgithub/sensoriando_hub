@@ -43,6 +43,7 @@
     #define SYSTEM_UPDATE   1000
 #endif
 
+#define CHECK_UPDATE    5000
 #define DEBOUNCE        500
 
 //Unique for each hardware
@@ -52,15 +53,17 @@
 /* 
  * GlobalVariables
  */
-long SystemElapsedTime;
-byte InitializedSd, InitializedEth;
+long SystemElapsedTime, CheckElapsedTime;
+uint8_t Mac[6];
+byte InitializedSd, InitializedEth, InitializedBroker;
+
 Nanoshield_RTC rtcclient;
 EthernetClient ethernetclient;
 SensoriandoObj sensoriando(ethernetclient);
 
 enum LogMode{LM_Info, LM_Warning, LM_Error};
 long SdcardSize;
-uint8_t Mac[6];
+
 
 /*
  * prototypes
@@ -130,7 +133,7 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
     }
 
     // Valid Erros
-    if ( (! InitializedSd) && (! InitializedEth) ) {
+    if ( (!InitializedSd) && (!InitializedEth) ) {
         interface_modeerror();
         logthing(SYS_REBOOT, LM_Error);
         resetFunc();
@@ -148,12 +151,17 @@ Serial.print("Comand struct (bytes): ");Serial.println(sizeof(SensoriandoWifiCom
         logthing(RTC_UPDFAIL, LM_Error);
         resetFunc();
     } else {
-        rtc_sync(&rtcclient, ntp_get(), dt_rtc);
-        logthing(RTC_UPDPASS, LM_Info);
+        if ( InitializedEth ) {
+          rtc_sync(&rtcclient, ntp_get(), dt_rtc);
+          logthing(RTC_UPDPASS, LM_Info);
+        } else {
+          logthing(RTC_READ, LM_Info);  
+        }
     }
-
+    
     //Sensoriando   
-    if ( !sensoriandoInit(&sensoriando, Mac) ) {
+    InitializedBroker = sensoriandoInit(&sensoriando, Mac);
+    if ( ! InitializedBroker ) {
         interface_modeerror();
         logthing(BROKER_FAIL, LM_Warning);
     } else {
@@ -182,7 +190,8 @@ Serial.print("Unix time: ");Serial.println(dt_rtc.unixtime());
     interface_modenormal();
     logthing(WAIT_READ, LM_Info);
     
-    SystemElapsedTime = millis();    
+    SystemElapsedTime = millis();
+    CheckElapsedTime = millis();    
 }
  
 void loop()
@@ -208,21 +217,34 @@ void loop()
     /*
      * Check critical devices
      */
-    if ( ! InitializedSd ) {
-        if ( ! sd_init() ) {
-            interface_elapsedtime = interface_modeerror();
-            logthing(SD_INITFAIL, LM_Warning);
-        } else {
-            InitializedSd = 1;
-        }
+    if ( (millis() - CheckElapsedTime) > CHECK_UPDATE ) {
+      CheckElapsedTime = millis();
+      
+      if ( ! InitializedSd ) {
+          if ( ! sd_init() ) {
+              interface_elapsedtime = interface_modeerror();
+              logthing(SD_INITFAIL, LM_Warning);
+          } else {
+              InitializedSd = 1;
+          }
+      }
+  
+      if ( ! InitializedEth ) {
+          if ( ! ethernet_init(Mac) ) {
+              interface_elapsedtime = interface_modeerror();
+              logthing(ETHERNET_DONOTCONFIG, LM_Warning);
+          } else {
+              InitializedEth = 1;
+          }
+      }
     }
 
-    if ( ! InitializedEth ) {
-        if ( ! ethernet_init(Mac) ) {
+    if ( InitializedEth && !InitializedBroker) {
+        if ( !sensoriandoReconnect(&sensoriando, Mac) ) {
             interface_elapsedtime = interface_modeerror();
-            logthing(ETHERNET_DONOTCONFIG, LM_Warning);
+            logthing(BROKER_CONN, LM_Warning);
         } else {
-            InitializedEth = 1;
+            InitializedBroker = 1;               
         }
     }
 
@@ -232,29 +254,30 @@ void loop()
      */
     if ( (millis() - SystemElapsedTime) > SYSTEM_UPDATE ) {
         SystemElapsedTime = millis();
-        dt = rtc_get(&rtcclient); 
-
-        wifi_update(dt.unixtime());
-        logthing(WIFI_UPD, LM_Info);
         
-        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
-            interface_modesend(interface_elapsedtime);
-            strcpy(sensoring.uuid, UUID);
+        dt = rtc_get(&rtcclient); 
+        strcpy(sensoring.uuid, UUID);
+        sensoring.dt = dt.unixtime();
+        sensoring.value = sd_freespace(SdcardSize);
+       
+        logthing(WIFI_UPD, LM_Info);
+        wifi_update(dt.unixtime());
+        interface_modesend(interface_elapsedtime);
             
-            logthing(SYS_SEND_TIME, LM_Info);
-            sensoring.dt = dt.unixtime();
-            sensoriandoSendDatetime(&sensoriando, &sensoring);
-
-            logthing(SYS_SEND_STORAGE, LM_Info);
-            sensoring.dt = dt.unixtime();
-            sensoring.value = sd_freespace(SdcardSize);
-            sensoriandoSendStorage(&sensoriando, &sensoring); 
-            
-            logthing(SYS_SENT, LM_Info);
-            interface_modenormal();
-        } else {
-            logthing(BROKER_CONN, LM_Warning);  
+        logthing(SYS_SEND_TIME, LM_Info);
+        if ( !sensoriandoSendDatetime(&sensoriando, &sensoring) ){
+            logthing(BROKER_TIME, LM_Warning);  
+            InitializedBroker = 0;
         }
+
+        logthing(SYS_SEND_STORAGE, LM_Info);
+        if ( !sensoriandoSendStorage(&sensoriando, &sensoring ) ){           
+            logthing(BROKER_STORAGE, LM_Warning); 
+            InitializedBroker = 0;
+        }
+            
+        logthing(SYS_SENT, LM_Info);
+        interface_modenormal();
     }
 
     if ( wifi_available(&datum) ) {
@@ -268,21 +291,25 @@ Serial.print("dt: ");Serial.println(datum.dt, DEC);
 Serial.print("ETX: ");Serial.println(datum.etx, HEX);
 Serial.println();
 #endif          
-        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
-            interface_modesend(interface_elapsedtime);
+        interface_modesend(interface_elapsedtime);
 
-            strcpy(sensoring.uuid, datum.uuid);
-            sensoring.id = datum.id;
-            sensoring.dt = datum.dt;
-            sensoring.value = datum.value;
-            sensoriandoSendValue(&sensoriando, &sensoring); 
-            
+        strcpy(sensoring.uuid, datum.uuid);
+        sensoring.id = datum.id;
+        sensoring.dt = datum.dt;
+        sensoring.value = datum.value;
+        
+        if ( sensoriandoSendValue(&sensoriando, &sensoring) ){ 
             interface_modenormal();
         } else {
             logthing(BROKER_SENSOR, LM_Warning);  
+            
+            InitializedBroker = 0;
 
+            if ( InitializedSd ) {
+              sd_writedatum(&datum);
+            }
+            
             interface_elapsedtime = interface_modeerror();
-            sd_writedatum(&datum);
         }
     }
 
@@ -308,23 +335,21 @@ void logthing(char *msg, int logmode)
                                                               msg);      
     }
 
-    if ( logmode == LM_Info ) {
-        #ifdef DEBUG
-            Serial.println(msg);
-        #endif  
-    }
+#ifdef DEBUG
+Serial.println(msg);
+#endif  
 
-    if ( InitializedEth && (logmode == LM_Error) ) {
-        if ( sensoriandoReconnect(&sensoriando, Mac) ) {
-            strcpy(sensoring.uuid, UUID);
-            sensoring.dt = dt.unixtime();
-            strcpy(sensoring.msg, msg);
-    
-            sensoriandoSendMessage(&sensoriando, &sensoring);
-        }
-    }
+    if ( logmode != LM_Info ) {
+      if ( InitializedEth && InitializedBroker ) {
+          strcpy(sensoring.uuid, UUID);
+          sensoring.dt = dt.unixtime();
+          strcpy(sensoring.msg, msg);
+      
+          InitializedBroker = sensoriandoSendMessage(&sensoriando, &sensoring);
+      }
         
-    if ( InitializedSd && ((logmode == LM_Warning) || (logmode == LM_Error)) ) {
-        sd_writemsg(logmsg);
+      if ( InitializedSd ) {
+          sd_writemsg(logmsg);
+      }
     }
 }

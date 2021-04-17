@@ -17,7 +17,7 @@
 /*
  * MACROS
  */
-//#define DEBUG_SD
+#define DEBUG_SD
 
 #define MESSAGE_LOG   "logsys.txt"
 #define DATA_DB       "data.hex"

@@ -5,6 +5,7 @@
 #define MESSAGE_H
  
 #define WAIT_READ           "Waiting..."
+
 #define SYS_REBOOT          "Critical error: rebooting"
 #define SYS_SENT            "Data system sent to broker"
 #define SYS_PAIR            "Pairing started"
@@ -20,12 +21,15 @@
 #define RTC_UPDFAIL         "RTC wasn't init: reboot!"
 #define RTC_UPDPASS         "Update RTC via NTP, OK!"
 #define RTC_NOW             "Unix time: %s"
+#define RTC_READ            "Unix time updated from RTC"
 
 #define BROKER_CRC            "CRC do not match"
 #define BROKER_PASS           "Broker init, OK!"
 #define BROKER_FAIL           "Broker initt, FAIL!"
-#define BROKER_SENSOR         "[Data Sensor] Broker don't connected: Writing SD!"
-#define BROKER_CONN           "[System] Broker do not connected"
+#define BROKER_SENSOR         "Datum do not sent to Broker: Writing in SD!"
+#define BROKER_TIME           "RTC do not sent to Broker"
+#define BROKER_STORAGE        "Storage do not sent do Broker"
+#define BROKER_CONN           "Broker do not connected"
 
 #define SD_INITFAIL             "SD fail: reboot!"
 #define SD_INITPASS             "SD init, OK!"

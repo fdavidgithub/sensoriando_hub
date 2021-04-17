@@ -120,29 +120,15 @@ Serial.println("Writed");
 void sd_writedatum(SensoriandoSensorDatum *datum) 
 {
     File f;
-/*    
-    if ( ! SdFreeSpace ) {
+
 #ifdef DEBUG_SD
-Serial.println("[DATA] OUT SPACE");
-#endif     
-        SD.remove(DATA_DB);      
-    }
-*/
-#ifdef DEBUG_SD
-Serial.println("Writing DATA log...");
+Serial.println("Writing DATA...");
 Serial.write((byte *)datum, sizeof(SensoriandoSensorDatum));
 #endif     
 
     f = SD.open(DATA_DB, FILE_WRITE);
     f.write((byte *)datum, sizeof(SensoriandoSensorDatum));
     f.close();    
-/*    
-#ifdef DEBUG_SD
-Serial.print("DATA size: ");Serial.print(f.size());    
-#endif
-
-    SdFreeSpace = SdFreeSpace - f.size()/1048576;
-*/
 }
 
 long sd_freespace(long sdsize)
@@ -224,7 +210,7 @@ long sd_usedsize(File dir, long bytes)
         } 
 
 #ifdef DEBUG_SD
-if ( entry ) { Serial.println(entry.name()); };
+//if ( entry ) { Serial.println(entry.name()); };
 #endif
 
         if (entry.isDirectory()) {
