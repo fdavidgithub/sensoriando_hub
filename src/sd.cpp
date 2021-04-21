@@ -1,45 +1,54 @@
 #include "sd.h"
 
-void sd_dropdb()
+void movefile(char *source, char *destiny)
 {
-  File f;
-  
-  SD.remove(DATA_DB);
-  
-  f = SD.open(DATA_DB, FILE_WRITE);
-  f.close();
+    File filein, fileout;
+
+    filein = SD.open(source);
+    fileout = SD.open(destiny, FILE_WRITE);
+   
+    if ( filein && fileout ) {
+        while (filein.available() ) {
+            fileout.write(filein.read());
+        }
+    }
+
+    filein.close();
+    fileout.close();
+
+    SD.remove(source);
 }
 
+
+/*
+ * Publics
+ */
 byte sd_readdatum(SensoriandoSensorDatum *datum)
 {
-    File f;
+    File root, entry;
     byte buf[sizeof(SensoriandoSensorDatum)];
-    static unsigned long pos=0;
+    byte res=0;
+    char filedata[32], filelost[32], filesent[32];
 
     datum->stx = NULL;
     datum->id = NULL;
     datum->value = NULL;
     datum->etx = NULL;
     
-#ifdef DEBUG_SD
-Serial.println("Reading DATA...");
-#endif                
-
-    f = SD.open(DATA_DB);
-    f.seek(pos);
+    root = SD.open(DATA_DIR);
+    entry = root.openNextFile();
     
-    if ( f.available() ) {
-        f.read(buf, sizeof(buf));
-        pos = f.position();      
+    if ( entry ) {
+#ifdef DEBUG_SD
+Serial.println("Reading DATUM in SD...");
+#endif  
+        res = 1;
 
-        if ( f.available() ) {
-            f.close();
-        } else {
-            f.close();
-            sd_dropdb();
-            pos = 0;            
-        }
-          
+        sprintf(filedata, "%s/%s", DATA_DIR, entry.name());
+        sprintf(filelost, "%s/%s", LOSTFOUND_DIR, entry.name());
+        sprintf(filesent, "%s/%s", SENT_DIR, entry.name());
+
+        entry.read(buf, sizeof(buf));         
         memcpy(datum, buf, sizeof(buf));
     
 #ifdef DEBUG_SD
@@ -48,15 +57,19 @@ Serial.print("id: ");Serial.println(datum->id, DEC);
 Serial.print("value: ");Serial.println(datum->value, DEC);
 Serial.print("ETX: 0x0");Serial.println(datum->etx, HEX);
 Serial.println();
-#endif        
-    } else {
-#ifdef DEBUG_SD
-Serial.println("DATA file empty");
 #endif 
-        pos = 0;      
+
+        if ( (datum->stx == STX) && (datum->etx == ETX) ) {
+            movefile(filedata, filesent); 
+        } else {
+            movefile(filedata, filelost);    
+        }
     }
     
-    return (datum->stx == STX) && (datum->etx == ETX);
+    entry.close();
+    root.close();
+
+    return res;
 }
 
 byte sd_init() 
@@ -81,12 +94,25 @@ Serial.println("Don't exists LOG file");
           f.close();
       }       
 
-      if ( ! SD.exists(DATA_DB) ) {
+      if ( ! SD.exists(DATA_DIR) ) {
 #ifdef DEBUG_SD
-Serial.println("Don't exists DATUM file");
+Serial.println("Don't exists directory DATA");
 #endif                
-          f = SD.open(DATA_DB, FILE_WRITE);
-          f.close();
+          SD.mkdir(DATA_DIR);
+      } 
+
+      if ( ! SD.exists(SENT_DIR) ) {
+#ifdef DEBUG_SD
+Serial.println("Don't exists directory SENT");
+#endif                
+          SD.mkdir(SENT_DIR);
+      } 
+
+      if ( ! SD.exists(LOSTFOUND_DIR) ) {
+#ifdef DEBUG_SD
+Serial.println("Don't exists directory LOST+FOUND");
+#endif                
+          SD.mkdir(LOSTFOUND_DIR);
       } 
   }
     
@@ -117,18 +143,29 @@ Serial.println("Writed");
 #endif
 }
 
-void sd_writedatum(SensoriandoSensorDatum *datum) 
+byte sd_writedatum(SensoriandoSensorDatum *datum) 
 {
     File f;
+    char filename[20];
+    int res;
 
 #ifdef DEBUG_SD
-Serial.println("Writing DATA...");
+Serial.println("Writing DATUM...");
 Serial.write((byte *)datum, sizeof(SensoriandoSensorDatum));
+Serial.println();
 #endif     
 
-    f = SD.open(DATA_DB, FILE_WRITE);
-    f.write((byte *)datum, sizeof(SensoriandoSensorDatum));
-    f.close();    
+    sprintf(filename, "%s/%x%x.dat", DATA_DIR, datum->id, datum->dt);
+
+#ifdef DEBUG_SD
+Serial.print("Filename: ");Serial.println(filename);
+#endif     
+
+    f = SD.open(filename, FILE_WRITE);
+    res = f.write((byte *)datum, sizeof(SensoriandoSensorDatum));
+    f.close();
+
+    return res;
 }
 
 long sd_freespace(long sdsize)

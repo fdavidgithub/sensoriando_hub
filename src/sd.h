@@ -19,8 +19,10 @@
  */
 #define DEBUG_SD
 
-#define MESSAGE_LOG   "logsys.txt"
-#define DATA_DB       "data.hex"
+#define MESSAGE_LOG     "logsys.txt"
+#define DATA_DIR        "/data"
+#define LOSTFOUND_DIR   "/lostdata"
+#define SENT_DIR        "/sentdata"
 
 
 /*
@@ -34,9 +36,8 @@
  */
 byte sd_init();
 void sd_writemsg(char *);
-void sd_writedatum(SensoriandoSensorDatum *);
+byte sd_writedatum(SensoriandoSensorDatum *);
 byte sd_readdatum(SensoriandoSensorDatum *);
-void sd_dropdb();
 long sd_usedsize(File, long);
 long sd_fullsize();
 long sd_freespace(long);

@@ -27,12 +27,14 @@
 #define BROKER_PASS           "Broker init, OK!"
 #define BROKER_FAIL           "Broker initt, FAIL!"
 #define BROKER_SENSOR         "Datum do not sent to Broker: Writing in SD!"
+#define BROKER_SENSORSAVED    "Datum do not sent to Broker"
 #define BROKER_TIME           "RTC do not sent to Broker"
 #define BROKER_STORAGE        "Storage do not sent do Broker"
 #define BROKER_CONN           "Broker do not connected"
 
 #define SD_INITFAIL             "SD fail: reboot!"
 #define SD_INITPASS             "SD init, OK!"
+#define SD_LOSTFOUND            "Sent datum wrote in SD"
 
 #define ETHERNET_DONOTCONFIG      "Nao foi possivel configurar a placa de rede."
 #define ETHERNET_NOTFOUND         "Placa de rede nao encontrada."

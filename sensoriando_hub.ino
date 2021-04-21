@@ -56,6 +56,7 @@
 long SystemElapsedTime, CheckElapsedTime;
 uint8_t Mac[6];
 byte InitializedSd, InitializedEth, InitializedBroker;
+byte DatumInSD=1;
 
 Nanoshield_RTC rtcclient;
 EthernetClient ethernetclient;
@@ -70,6 +71,7 @@ long SdcardSize;
  */
 void(* resetFunc) (void) = 0; //declare reset function @ address 0      
 void logthing(char *, int);
+byte checknotsent();
 
           
 /*
@@ -244,7 +246,7 @@ void loop()
             interface_elapsedtime = interface_modeerror();
             logthing(BROKER_CONN, LM_Warning);
         } else {
-            InitializedBroker = 1;               
+            InitializedBroker = 1;  
         }
     }
 
@@ -280,6 +282,7 @@ void loop()
         interface_modenormal();
     }
 
+    //Send datum received from serial
     if ( wifi_available(&datum) ) {
 #ifdef DEBUG
 Serial.print("[Send MQTT] Bytes received: ");Serial.println(sizeof(datum), DEC);
@@ -301,24 +304,52 @@ Serial.println();
         if ( sensoriandoSendValue(&sensoriando, &sensoring) ){ 
             interface_modenormal();
         } else {
-            logthing(BROKER_SENSOR, LM_Warning);  
-            
+            logthing(BROKER_SENSOR, LM_Warning);       
             InitializedBroker = 0;
 
             if ( InitializedSd ) {
-              sd_writedatum(&datum);
+              DatumInSD = sd_writedatum(&datum);
             }
             
             interface_elapsedtime = interface_modeerror();
         }
+    } else {
+        DatumInSD = checknotsent();    //Send datum write in SD
     }
-
+    
 }
 
 
 /*
  * functions
  */
+byte checknotsent()
+{   
+    SensoriandoSensorDatum datum;
+    SensoriandoParser sensoring;
+    byte res=0;
+    
+    if ( InitializedEth && InitializedBroker && DatumInSD ) {
+      res = sd_readdatum(&datum); 
+      
+      if ( res ) {      
+        strcpy(sensoring.uuid, datum.uuid);
+        sensoring.id = datum.id;
+        sensoring.dt = datum.dt;
+        sensoring.value = datum.value;
+
+        if ( !sensoriandoSendValue(&sensoriando, &sensoring) ){ 
+          logthing(BROKER_SENSORSAVED, LM_Warning);  
+          InitializedBroker = 0;
+        } else {
+          logthing(SD_LOSTFOUND, LM_Info);  
+        }
+      } 
+    } 
+
+    return res;
+}
+
 void logthing(char *msg, int logmode)
 {
     SensoriandoParser sensoring;
